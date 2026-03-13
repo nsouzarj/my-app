@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  fullName            String?
+  phone               String?              // New field for phone number
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  organizationMembers OrganizationMember[]
+
+  @@map("users")
+}
+
+model Organization {
+  id        String               @id @default(uuid())
+  name      String
+  type      String               // "Pessoal" | "Empresarial" (PT-BR)
+  createdBy String
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  members   OrganizationMember[]
+  accounts  Account[]
+  categories Category[]
+  transactions Transaction[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  organizationId String
+  userId         String
+  role           String       // "Admin" | "Member"
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model Account {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  type           String       // "Checking" | "Savings" | "Credit Card"
+  balance        Decimal      @default(0) @db.Decimal(10, 2)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+
+  @@index([organizationId])
+  @@map("accounts")
+}
+
+model Category {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  color          String?
+  icon           String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+
+  @@index([organizationId])
+  @@map("categories")
+}
+
+model Transaction {
+  id             String       @id @default(uuid())
+  accountId      String
+  organizationId String
+  categoryId     String
+  amount         Decimal      @db.Decimal(10, 2)
+  description    String
+  date           DateTime
+  type           String       // "Income" | "Expense"
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  account        Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category       Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([accountId])
+  @@index([categoryId])
+  @@map("transactions")
+}

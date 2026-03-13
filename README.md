@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema de Gestão Financeira Premium (Vite + PHP)
 
-## Getting Started
+Um SaaS de gerenciamento financeiro moderno, rápido e altamente personalizável, construído com React 19 e PHP 8.
 
-First, run the development server:
+## 🚀 Tecnologias
 
+- **Frontend**: React 19, Vite, Tailwind CSS 4, React Router 7.
+- **Backend**: PHP 8.1+, MySQL.
+- **UI/UX**: Lucide Icons, Recharts, Framer Motion (subtle animations).
+
+## 🛠️ Como Rodar o Projeto
+
+O projeto funciona com dois processos simultâneos: o servidor de desenvolvimento do Frontend (Vite) e o servidor da API (PHP).
+
+### 1. Requisitos
+- Node.js 18+
+- PHP 8.1+
+- MySQL 8.0
+
+### 2. Configuração do Backend (API)
+A API reside em `public/api`.
+- Configure sua conexão com o banco de dados em `public/api/config.php` (ou similar).
+- Inicie o servidor PHP (ou use Apache/Nginx apontando para `public`):
+  ```bash
+  php -S localhost:8000 -t public
+  ```
+
+### 3. Configuração do Frontend
+Vá para a pasta raiz do projeto:
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+O frontend estará disponível em `http://localhost:5173/financas`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Destaques do Projeto
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Skins Premium**: Sistema de temas dinâmicos (Midnight, Emerald, Ocean, Gold, Light).
+- **Multi-tenancy**: Isolamento total de dados por organização.
+- **Gestão de Vencimentos**: Controle inteligente de despesas fixas com alertas de atraso.
+- **Dashboard Analítico**: Gráficos de rosca (Donut) para categorias e fluxo de caixa.
+- **Relatórios**: Exportação e filtros avançados para acompanhamento financeiro.
+- **Segurança**: Diálogos de confirmação em todas as ações críticas e feedback instantâneo via Toasts.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📁 Estrutura de Pastas
 
-## Learn More
+- `/frontend`: Aplicação React (Vite).
+- `/public/api`: Endpoints PHP (Backend).
+- `/public/api/lib`: Bibliotecas de conexão e utilitários.
+- `ARCHITECTURE.md`: Detalhes técnicos da arquitetura do sistema.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Desenvolvido por Antigravity (Google Deepmind) para [Nome do Usuário]*

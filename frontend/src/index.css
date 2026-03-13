@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary-color);
+  --color-primary-dark: var(--primary-dark);
+  --color-app-bg: var(--bg-color);
+  --color-app-card: var(--card-color);
+  --color-app-border: var(--border-color);
+  
+  --color-app-text: var(--primary-color);
+  --color-app-text-dim: var(--text-dim);
+  --color-app-soft: var(--bg-soft);
+  
+  --color-app-accent: var(--primary-color);
+  --color-app-income: var(--accent-income);
+  --color-app-expense: var(--accent-expense);
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Default Variables (Midnight) */
+  --bg-color: #09090b;
+  --card-color: #121216;
+  --bg-soft: #18181b;
+  --border-color: #27272a;
+  --primary-color: #ffffff;
+  --primary-dark: #e4e4e7;
+  --text-dim: #71717a;
+}
+
+/* Midnight Skin (Pure Black/Zinc) */
+.skin-midnight {
+  --bg-color: #09090b;
+  --card-color: #121216;
+  --bg-soft: #18181b;
+  --border-color: #27272a;
+  --primary-color: #ffffff;
+  --primary-dark: #e4e4e7;
+  --text-dim: #71717a;
+}
+
+/* Emerald Skin (Deep Forest) */
+.skin-emerald {
+  --bg-color: #022c22;
+  --card-color: #064e3b;
+  --bg-soft: #065f46;
+  --border-color: #0d9488;
+  --primary-color: #10b981;
+  --primary-dark: #34d399;
+  --text-dim: #a7f3d0;
+}
+
+/* Ocean Skin (Deep Sea Blue) */
+.skin-ocean {
+  --bg-color: #082f49;
+  --card-color: #0c4a6e;
+  --bg-soft: #075985;
+  --border-color: #0369a1;
+  --primary-color: #0ea5e9;
+  --primary-dark: #38bdf8;
+  --text-dim: #bae6fd;
+}
+
+/* Slate Skin (Industrial Gray) */
+.skin-slate {
+  --bg-color: #0f172a;
+  --card-color: #1e293b;
+  --bg-soft: #334155;
+  --border-color: #475569;
+  --primary-color: #f1f5f9;
+  --primary-dark: #cbd5e1;
+  --text-dim: #94a3b8;
+}
+
+/* Gold Skin (Premium Business) */
+.skin-gold {
+  --bg-color: #1c1917;
+  --card-color: #292524;
+  --bg-soft: #44403c;
+  --border-color: #57534e;
+  --primary-color: #f59e0b;
+  --primary-dark: #fbbf24;
+  --text-dim: #d6d3d1;
+}
+
+/* Light Skin (Premium Professional White) */
+.skin-light {
+  --bg-color: #f1f5f9;
+  --card-color: #ffffff;
+  --bg-soft: #f8fafc;
+  --border-color: #cbd5e1;
+  --primary-color: #0f172a;
+  --primary-dark: #334155;
+  --text-dim: #475569;
+  --accent-income: #059669;
+  --accent-expense: #dc2626;
+}
+
+.skin-light .bg-app-card {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+.skin-light .border-app {
+  border-color: #e2e8f0;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  color: var(--primary-color);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Utility mappings for easy use */
+.bg-app { background-color: var(--bg-color); }
+.bg-app-card { background-color: var(--card-color); }
+.bg-app-soft { background-color: var(--bg-soft); }
+.border-app { border-color: var(--border-color); }
+.text-primary-skin { color: var(--primary-color); }
