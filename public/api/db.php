@@ -33,4 +33,24 @@ try {
 function getJsonInput() {
     return json_decode(file_get_contents('php://input'), true);
 }
+
+function recalculateAccountBalance($pdo, $accountId) {
+    if (empty($accountId)) return;
+
+    // 1. Somar todas as receitas (income)
+    $stmtInc = $pdo->prepare("SELECT SUM(amount) FROM transactions WHERE accountId = ? AND (LOWER(type) = 'income' OR type = 'income')");
+    $stmtInc->execute([$accountId]);
+    $totalIncome = (float)$stmtInc->fetchColumn();
+
+    // 2. Somar todas as despesas (expense)
+    $stmtExp = $pdo->prepare("SELECT SUM(amount) FROM transactions WHERE accountId = ? AND (LOWER(type) = 'expense' OR type = 'expense')");
+    $stmtExp->execute([$accountId]);
+    $totalExpense = (float)$stmtExp->fetchColumn();
+
+    $finalBalance = $totalIncome - $totalExpense;
+
+    // 3. Atualizar a conta com o valor real calculado
+    $stmtUpd = $pdo->prepare("UPDATE accounts SET balance = ?, updatedAt = NOW() WHERE id = ?");
+    $stmtUpd->execute([$finalBalance, $accountId]);
+}
 ?>

@@ -3,7 +3,7 @@ import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor } from 'lucide-react'
+import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
@@ -15,7 +15,9 @@ export default function Settings() {
   const [orgName, setOrgName] = useState('')
   const [fullName, setFullName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isReconciling, setIsReconciling] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isReconcileConfirmOpen, setIsReconcileConfirmOpen] = useState(false)
 
   const skins = [
     { id: 'midnight', name: 'Midnight', color: 'bg-zinc-100', accent: 'bg-white border-zinc-200' },
@@ -50,7 +52,7 @@ export default function Settings() {
         organizationId: organization.organizationId 
       })
 
-      await apiService.post('auth/update_profile.php', {
+      await apiService.post('auth/update_profile', {
         userId: user.id,
         fullName: fullName
       })
@@ -61,6 +63,27 @@ export default function Settings() {
       toast.error('Erro ao salvar configurações.')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function performReconcile() {
+    setIsReconcileConfirmOpen(false)
+    setIsReconciling(true)
+    try {
+      const response = await apiService.post('reconcile_all', {
+        organizationId: organization.organizationId
+      })
+      
+      if (response.success) {
+        toast.success(response.message || 'Saldos sincronizados!')
+      } else {
+        throw new Error(response.error)
+      }
+    } catch (error: any) {
+      console.error('Reconcile error:', error)
+      toast.error(error.message || 'Erro ao sincronizar saldos.')
+    } finally {
+      setIsReconciling(false)
     }
   }
 
@@ -198,6 +221,38 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+
+            {/* Utilitários */}
+            <div className="bg-app-card border border-app rounded-3xl p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-app-bg rounded-lg">
+                  <RefreshCw size={20} className="text-app-text" />
+                </div>
+                <h3 className="text-lg font-bold text-app-text">Utilitários do Sistema</h3>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                  <h4 className="font-bold text-amber-500 flex items-center gap-2">
+                    <ShieldCheck size={18} />
+                    Sincronização de Saldos
+                  </h4>
+                  <p className="text-sm text-app-text-dim mt-2 leading-relaxed">
+                    Esta ferramenta recalcula o saldo real de todas as suas contas baseando-se no histórico completo de transações. 
+                    Use isto caso note qualquer discrepância nos valores exibidos.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsReconcileConfirmOpen(true)}
+                    disabled={isReconciling}
+                    className="mt-6 flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-all disabled:opacity-50"
+                  >
+                    {isReconciling ? <RefreshCw className="w-5 h-5 animate-spin" /> : <RefreshCw size={18} />}
+                    {isReconciling ? 'Sincronizando...' : 'Sincronizar Todos os Saldos'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -210,6 +265,16 @@ export default function Settings() {
         onConfirm={performSave}
         onClose={() => setIsConfirmOpen(false)}
         isLoading={isLoading}
+      />
+
+      <ConfirmDialog 
+        isOpen={isReconcileConfirmOpen}
+        title="Sincronizar Saldos"
+        message="Esta ação irá recalcular o saldo de todas as suas contas baseando-se no histórico de transações. Deseja prosseguir?"
+        confirmLabel="Sincronizar"
+        onConfirm={performReconcile}
+        onClose={() => setIsReconcileConfirmOpen(false)}
+        isLoading={isReconciling}
       />
     </DashboardLayout>
   )

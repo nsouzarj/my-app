@@ -9,30 +9,11 @@ $organizationId = $_GET['organizationId'] ?? 'default_org'; // Fallback if no au
  * Recalcula o saldo de uma conta do zero com base no histórico de transações.
  * Esta abordagem "bulletproof" elimina erros de arredondamento ou inconsistências acumuladas.
  */
-function recalculateAccountBalance($pdo, $accountId) {
-    if (empty($accountId)) return;
-
-    // 1. Somar todas as receitas (income)
-    $stmtInc = $pdo->prepare("SELECT SUM(amount) FROM transactions WHERE accountId = ? AND type = 'income'");
-    $stmtInc->execute([$accountId]);
-    $totalIncome = (float)$stmtInc->fetchColumn();
-
-    // 2. Somar todas as despesas (expense)
-    $stmtExp = $pdo->prepare("SELECT SUM(amount) FROM transactions WHERE accountId = ? AND LOWER(type) = 'expense'");
-    $stmtExp->execute([$accountId]);
-    $totalExpense = (float)$stmtExp->fetchColumn();
-
-    $finalBalance = $totalIncome - $totalExpense;
-
-    // 3. Atualizar a conta com o valor real calculado
-    $stmtUpd = $pdo->prepare("UPDATE accounts SET balance = ?, updatedAt = NOW() WHERE id = ?");
-    $stmtUpd->execute([$finalBalance, $accountId]);
-}
-
 if ($method === 'GET') {
     $accountId = $_GET['accountId'] ?? null;
     $startDate = $_GET['startDate'] ?? null;
     $endDate = $_GET['endDate'] ?? null;
+    $type = $_GET['type'] ?? 'all';
     $sortByInput = $_GET['sortBy'] ?? 'date';
     $orderInput = strtoupper($_GET['order'] ?? 'DESC');
 
@@ -67,6 +48,11 @@ if ($method === 'GET') {
     if ($endDate) {
         $sql .= " AND t.date <= ?";
         $params[] = $endDate;
+    }
+
+    if ($type !== 'all') {
+        $sql .= " AND t.type = ?";
+        $params[] = $type;
     }
     
     $sql .= " ORDER BY {$orderBy} {$order}";

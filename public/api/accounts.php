@@ -54,13 +54,44 @@ if ($method === 'PUT') {
     $data = getJsonInput();
     $id = $_GET['id'];
     
-    $stmt = $pdo->prepare("UPDATE accounts SET name = ?, type = ?, balance = ?, updatedAt = NOW() WHERE id = ?");
+    // 1. Buscar saldo atual para ver se houve alteração manual
+    $stmtOld = $pdo->prepare("SELECT balance, organizationId FROM accounts WHERE id = ?");
+    $stmtOld->execute([$id]);
+    $oldAccount = $stmtOld->fetch();
+    $oldBalance = (float)($oldAccount['balance'] ?? 0);
+    $orgId = $oldAccount['organizationId'] ?? 'default_org';
+
+    $newBalance = (float)$data['balance'];
+
+    // 2. Se o saldo mudou, criar transação de ajuste (Reconciliação)
+    if (abs($newBalance - $oldBalance) > 0.001) {
+        $diff = $newBalance - $oldBalance;
+        $type = ($diff > 0) ? 'income' : 'expense';
+        $absAmount = abs($diff);
+        
+        $txId = bin2hex(random_bytes(16));
+        // Usamos uma categoria genérica "Outras" ou similar para o ajuste
+        $stmtTx = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, organizationId, categoryId, status, createdAt, updatedAt) 
+                                 VALUES (?, ?, ?, NOW(), ?, ?, ?, '16272b2fbb47d1feb74e94cfeed9032a', 'paid', NOW(), NOW())");
+        $stmtTx->execute([
+            $txId,
+            $absAmount,
+            "Ajuste de Saldo (Manual)",
+            $type,
+            $id,
+            $orgId
+        ]);
+    }
+    
+    $stmt = $pdo->prepare("UPDATE accounts SET name = ?, type = ?, updatedAt = NOW() WHERE id = ?");
     $stmt->execute([
         $data['name'],
         $data['type'],
-        $data['balance'],
         $id
     ]);
+
+    // 3. Recalcular saldo baseado no histórico consolidado
+    recalculateAccountBalance($pdo, $id);
     
     echo json_encode(['success' => true]);
 }

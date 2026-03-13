@@ -51,6 +51,7 @@ export default function Transactions() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
 
   // Confirm State (Restored)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -59,7 +60,7 @@ export default function Transactions() {
 
   useEffect(() => {
     if (organization) fetchData()
-  }, [organization, selectedDate, sortBy, sortOrder])
+  }, [organization, selectedDate, sortBy, sortOrder, typeFilter])
 
   async function fetchData() {
     try {
@@ -69,7 +70,8 @@ export default function Transactions() {
         startDate: format(startOfMonth(selectedDate), 'yyyy-MM-dd'),
         endDate: format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
         sortBy,
-        order: sortOrder
+        order: sortOrder,
+        type: typeFilter
       }
       
       const [t, a, c] = await Promise.all([
@@ -219,6 +221,36 @@ export default function Transactions() {
             <p className="text-xs font-bold text-app-text-dim uppercase tracking-wider">
               {transactions.length} Lançamentos
             </p>
+          </div>
+          
+          <div className="flex items-center gap-2 bg-app-card border border-app p-1 rounded-xl shadow-sm">
+            <button
+              onClick={() => setTypeFilter('all')}
+              className={cn(
+                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                typeFilter === 'all' ? "bg-app-text text-app-bg shadow-md" : "text-app-text-dim hover:text-app-text"
+              )}
+            >
+              Ambos
+            </button>
+            <button
+              onClick={() => setTypeFilter('income')}
+              className={cn(
+                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                typeFilter === 'income' ? "bg-emerald-500 text-white shadow-md font-black" : "text-app-text-dim hover:text-emerald-500"
+              )}
+            >
+              Receitas
+            </button>
+            <button
+              onClick={() => setTypeFilter('expense')}
+              className={cn(
+                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                typeFilter === 'expense' ? "bg-rose-500 text-white shadow-md font-black" : "text-app-text-dim hover:text-rose-500"
+              )}
+            >
+              Despesas
+            </button>
           </div>
           
           <button 
