@@ -9,6 +9,8 @@ import Accounts from './pages/Accounts';
 import Categories from './pages/Categories';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import { Toaster } from './components/ui/Toast';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -24,6 +26,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
             <Route path="/accounts" element={<PrivateRoute><Accounts /></PrivateRoute>} />

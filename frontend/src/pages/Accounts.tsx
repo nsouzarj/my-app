@@ -103,7 +103,7 @@ export default function Accounts() {
     setEditingAccount(null)
     setName('')
     setType('CHECKING')
-    setBalance('0')
+    setBalance('0,00')
     setIsDrawerOpen(true)
   }
 
@@ -111,7 +111,7 @@ export default function Accounts() {
     setEditingAccount(account)
     setName(account.name)
     setType(account.type)
-    setBalance(account.balance.toString())
+    setBalance(account.balance.toFixed(2).replace('.', ','))
     setIsDrawerOpen(true)
   }
 

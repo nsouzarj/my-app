@@ -105,7 +105,7 @@ export default function Transactions() {
   function handleOpenCreate() {
     setEditingTransaction(null)
     setDescription('')
-    setAmount('0')
+    setAmount('0,00')
     setDate(new Date().toISOString().split('T')[0])
     setType('Expense')
     setDueDate('')
@@ -120,7 +120,7 @@ export default function Transactions() {
   function handleOpenEdit(tx: Transaction) {
     setEditingTransaction(tx)
     setDescription(tx.description)
-    setAmount(tx.amount.toString())
+    setAmount(tx.amount.toFixed(2).replace('.', ','))
     setDate(new Date(tx.date).toISOString().split('T')[0])
     setType(tx.type)
     setAccountId(tx.accountId)

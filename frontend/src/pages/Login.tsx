@@ -90,6 +90,9 @@ export default function Login() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              <div className="flex justify-end pr-1">
+                <Link to="/forgot-password" className="text-[10px] font-black uppercase tracking-wider text-app-text-dim hover:text-app-accent transition-colors">Esqueceu sua senha?</Link>
+              </div>
             </div>
           </div>
 

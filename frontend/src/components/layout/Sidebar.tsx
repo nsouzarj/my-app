@@ -38,8 +38,8 @@ export default function Sidebar() {
         <div className="flex flex-col h-full p-6">
           <div className="flex items-center justify-between mb-10 px-2 text-app-text">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                  <span className="text-black font-bold text-lg">{orgName.charAt(0)}</span>
+              <div className="w-10 h-10 bg-app-text rounded-xl flex items-center justify-center shadow-lg shadow-black/10 ring-1 ring-white/10">
+                  <span className="text-app-bg font-black text-xl">{orgName.charAt(0)}</span>
               </div>
               <span className="text-xl font-bold tracking-tight truncate">{orgName}</span>
             </div>
@@ -65,7 +65,7 @@ export default function Sidebar() {
                 >
                   <item.icon className={cn(
                     "w-5 h-5 transition-colors",
-                    isActive ? "text-app-text" : "text-zinc-400 group-hover:text-app-text"
+                    isActive ? "text-app-text" : "text-app-text-dim group-hover:text-app-text"
                   )} />
                   {item.name}
                 </Link>
@@ -73,7 +73,7 @@ export default function Sidebar() {
             })}
           </nav>
 
-          <div className="pt-6 border-t border-zinc-900 px-2 mt-auto">
+          <div className="pt-6 border-t border-app px-2 mt-auto">
              <button 
                onClick={logout}
                className="flex items-center gap-3 w-full px-3 py-2.5 text-app-text-dim hover:text-red-400 transition-colors text-sm font-medium"
