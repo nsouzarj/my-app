@@ -32,8 +32,19 @@ try {
     $stmt->execute([$token, $expiry, $user['id']]);
 
     // 4. Enviar E-mail
-    // Segurança: Hardcoding do domínio oficial para evitar Host Header Injection
-    $baseUrl = "https://nsouza.eti.br/financas";
+    // Determinar a URL base de forma dinâmica para suportar dev e prod
+    // mas com lista branca para evitar Host Header Injection
+    $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
+    $currentHost = $_SERVER['HTTP_HOST'] ?? 'nsouza.eti.br';
+    $allowedHosts = ['nsouza.eti.br', 'www.nsouza.eti.br', 'localhost:3000', 'localhost:5173', 'localhost:8000'];
+    
+    // Se o host não estiver na lista ou for vazio, usa o domínio oficial
+    if (!in_array($currentHost, $allowedHosts)) {
+        $baseUrl = "https://nsouza.eti.br/financas";
+    } else {
+        $baseUrl = $protocol . "://" . $currentHost . "/financas";
+    }
+    
     $resetLink = $baseUrl . "/reset-password?token=" . $token;
     
     $subject = "Recuperação de Senha - Finanças";

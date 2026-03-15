@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Pencil, Trash2, Wallet, Landmark, CreditCard, PiggyBank, DollarSign, Calendar, FileText, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, Wallet, Landmark, CreditCard, PiggyBank, DollarSign, FileText, ArrowUp, ArrowDown } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
 import { DateFilter } from '../components/ui/DateFilter'
+import { formatDate } from '../lib/utils'
+import { DateInput } from '../components/ui/DateInput'
 
 interface Account {
   id: string
@@ -406,7 +408,7 @@ export default function Accounts() {
                         return rowsWithBalance.map(tx => (
                           <tr key={tx.id} className="hover:bg-app-soft/30 transition-colors group">
                             <td className="px-4 py-4 text-[11px] text-app-text-dim font-mono">
-                               {new Intl.DateTimeFormat('pt-BR').format(new Date(tx.date))}
+                               {formatDate(tx.date)}
                             </td>
                             <td className="px-4 py-4">
                               <div className="flex flex-col">
@@ -476,19 +478,14 @@ export default function Accounts() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-app-text-dim">Data de Recebimento</label>
-                <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-dim w-4 h-4" />
-                  <input 
-                    type="date"
-                    required
-                    value={incomeDate}
-                    onChange={e => setIncomeDate(e.target.value)}
-                    className="w-full bg-app-bg border border-app rounded-xl pl-12 pr-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none"
+                <div className="space-y-0">
+                  <DateInput 
+                    label="Data de Recebimento" 
+                    required 
+                    value={incomeDate} 
+                    onChange={setIncomeDate} 
                   />
                 </div>
-              </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-app-text-dim">Identificação</label>

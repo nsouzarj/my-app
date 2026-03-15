@@ -6,9 +6,10 @@ import { Plus, Pencil, Trash2, Search, Landmark, Tags, ArrowUp, ArrowDown } from
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
-import { cn } from '../lib/utils'
+import { cn, formatDate } from '../lib/utils'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
 import { DateFilter } from '../components/ui/DateFilter'
+import { DateInput } from '../components/ui/DateInput'
 
 interface Transaction {
   id: string
@@ -314,7 +315,7 @@ export default function Transactions() {
                   transactions.map(tx => (
                     <tr key={tx.id} className="hover:bg-app-soft/30 transition-colors group">
                       <td className="px-6 py-4 text-sm text-app-text-dim font-mono">
-                        {new Intl.DateTimeFormat('pt-BR').format(new Date(tx.date))}
+                        {formatDate(tx.date)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
@@ -347,11 +348,11 @@ export default function Transactions() {
                               {tx.status === 'paid' ? 'Pago' : (new Date(tx.due_date) < new Date() ? 'Atrasado' : 'Pendente')}
                             </span>
                             <span className="text-[10px] text-app-text-dim font-bold">
-                              Vence {new Intl.DateTimeFormat('pt-BR').format(new Date(tx.due_date))}
+                              Vence {formatDate(tx.due_date)}
                             </span>
                             {tx.status === 'paid' && tx.payment_date && (
                               <span className="text-[10px] text-emerald-500 font-bold">
-                                Pago em {new Intl.DateTimeFormat('pt-BR').format(new Date(tx.payment_date))}
+                                Pago em {formatDate(tx.payment_date)}
                               </span>
                             )}
                           </div>
@@ -421,10 +422,12 @@ export default function Transactions() {
                     className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-app-text-dim">Data</label>
-                  <input type="date" required value={date} onChange={e => setDate(e.target.value)}
-                    className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none"
+                <div className="space-y-0">
+                  <DateInput 
+                    label="Data" 
+                    required 
+                    value={date} 
+                    onChange={setDate} 
                   />
                 </div>
               </div>
@@ -472,10 +475,13 @@ export default function Transactions() {
 
                 {isFixed && (
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-app">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-app-text-dim uppercase">Vencimento</label>
-                      <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                        className="w-full bg-app-bg border border-app rounded-lg px-3 py-2 text-xs text-app-text outline-none focus:ring-1 focus:ring-app-accent" />
+                    <div className="space-y-0">
+                      <DateInput 
+                        label="Vencimento" 
+                        value={dueDate} 
+                        onChange={setDueDate} 
+                        className="py-2 px-3 text-xs"
+                      />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-app-text-dim uppercase">Status</label>
@@ -489,10 +495,13 @@ export default function Transactions() {
                 )}
                 
                 {status === 'paid' && isFixed && (
-                   <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-app-text-dim uppercase">Data do Pagamento</label>
-                      <input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)}
-                        className="w-full bg-app-bg border border-app rounded-lg px-3 py-2 text-xs text-app-text outline-none focus:ring-1 focus:ring-app-accent" />
+                   <div className="space-y-0">
+                      <DateInput 
+                        label="Data do Pagamento" 
+                        value={paymentDate} 
+                        onChange={setPaymentDate} 
+                        className="py-2 px-3 text-xs"
+                      />
                    </div>
                 )}
               </div>

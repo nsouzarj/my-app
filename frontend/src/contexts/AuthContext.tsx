@@ -6,6 +6,7 @@ interface AuthContextType {
   login: (data: any) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  loading: boolean;
   updateUser: (user: any) => void;
   updateOrganization: (org: any) => void;
 }
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [organization, setOrganization] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('finanças_user');
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(JSON.parse(savedUser));
       setOrganization(JSON.parse(savedOrg));
     }
+    setLoading(false);
   }, []);
 
   const login = (data: any) => {
@@ -56,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login, 
       logout, 
       isAuthenticated: !!user,
+      loading,
       updateUser,
       updateOrganization
     }}>

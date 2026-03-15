@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { apiService } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { cn } from '../lib/utils';
+import { cn, formatDate } from '../lib/utils';
 import { TrendingUp, TrendingDown, Wallet, Landmark, ArrowRight, PieChart as PieChartIcon, BarChart3, CalendarDays, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
@@ -263,7 +263,7 @@ export default function Dashboard() {
                           }).format(tx.type.toLowerCase() === 'income' ? tx.amount : -tx.amount)}
                         </p>
                         <p className="text-[10px] text-app-text-dim font-mono mt-0.5">
-                          {new Intl.DateTimeFormat('pt-BR').format(new Date(tx.date))}
+                          {formatDate(tx.date)}
                         </p>
                       </div>
                     </div>
