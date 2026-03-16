@@ -54,6 +54,12 @@ if ($method === 'GET') {
         $sql .= " AND t.type = ?";
         $params[] = $type;
     }
+
+    $statusFilter = $_GET['statusFilter'] ?? 'all';
+    if ($statusFilter === 'paid' || $statusFilter === 'pending') {
+        $sql .= " AND t.status = ?";
+        $params[] = $statusFilter;
+    }
     
     $sql .= " ORDER BY {$orderBy} {$order}";
             

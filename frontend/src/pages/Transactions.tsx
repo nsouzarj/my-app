@@ -53,6 +53,7 @@ export default function Transactions() {
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>('all')
 
   // Confirm State (Restored)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -61,7 +62,7 @@ export default function Transactions() {
 
   useEffect(() => {
     if (organization) fetchData()
-  }, [organization, selectedDate, sortBy, sortOrder, typeFilter])
+  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter])
 
   async function fetchData() {
     try {
@@ -72,7 +73,8 @@ export default function Transactions() {
         endDate: format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
         sortBy,
         order: sortOrder,
-        type: typeFilter
+        type: typeFilter,
+        statusFilter: statusFilter
       }
       
       const [t, a, c] = await Promise.all([
@@ -252,6 +254,18 @@ export default function Transactions() {
             >
               Despesas
             </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="bg-app-card border border-app text-app-text text-xs font-bold px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-app-accent shadow-sm cursor-pointer hover:bg-app-soft transition-all"
+            >
+              <option value="all">Todos os Status</option>
+              <option value="paid">Pagos</option>
+              <option value="pending">Pendentes</option>
+            </select>
           </div>
           
           <button 
