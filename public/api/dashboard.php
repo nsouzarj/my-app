@@ -3,9 +3,22 @@
 require_once 'db.php';
 
 $organizationId = $_GET['organizationId'] ?? 'default_org';
-$now = new DateTime();
+$monthParam = $_GET['month'] ?? null;
+$yearParam = $_GET['year'] ?? null;
+
+if ($monthParam && $yearParam) {
+    try {
+        $now = new DateTime("$yearParam-$monthParam-01");
+    } catch (Exception $e) {
+        $now = new DateTime();
+    }
+} else {
+    $now = new DateTime();
+}
+
 $startOfMonth = (clone $now)->modify('first day of this month')->format('Y-m-d 00:00:00');
 $endOfMonth = (clone $now)->modify('last day of this month')->format('Y-m-d 23:59:59');
+$actualNow = new DateTime();
 
 // 1. Total Balance
 $stmt = $pdo->prepare("SELECT SUM(balance) as total FROM accounts WHERE organizationId = ?");
@@ -24,14 +37,14 @@ $stmt = $pdo->prepare("SELECT SUM(amount) as expense FROM transactions
 $stmt->execute([$organizationId, $startOfMonth, $endOfMonth]);
 $monthlyExpenses = (float)$stmt->fetch()['expense'];
 
-// 4. Recent Transactions
+// 4. Recent Transactions (Mês Específico)
 $stmt = $pdo->prepare("SELECT t.*, a.name as accountName, c.name as categoryName, c.color as categoryColor
                        FROM transactions t 
                        LEFT JOIN accounts a ON t.accountId = a.id 
                        LEFT JOIN categories c ON t.categoryId = c.id
-                       WHERE t.organizationId = ? 
-                       ORDER BY t.createdAt DESC LIMIT 5");
-$stmt->execute([$organizationId]);
+                       WHERE t.organizationId = ? AND t.date >= ? AND t.date <= ?
+                       ORDER BY t.date DESC, t.createdAt DESC LIMIT 5");
+$stmt->execute([$organizationId, $startOfMonth, $endOfMonth]);
 $recentTransactions = $stmt->fetchAll();
 foreach ($recentTransactions as &$t) $t['amount'] = (float)$t['amount'];
 
@@ -70,7 +83,7 @@ $pendingBills = $stmt->fetch();
 
 $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM transactions 
                         WHERE organizationId = ? AND LOWER(type) = 'expense' AND status = 'pending' AND due_date <= ?");
-$stmt->execute([$organizationId, $now->format('Y-m-d 23:59:59')]);
+$stmt->execute([$organizationId, $actualNow->format('Y-m-d 23:59:59')]);
 $overdueCount = (int)$stmt->fetch()['count'];
 
 echo json_encode([

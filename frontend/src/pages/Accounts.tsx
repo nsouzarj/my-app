@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Pencil, Trash2, Wallet, Landmark, CreditCard, PiggyBank, DollarSign, FileText, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, Wallet, Landmark, DollarSign, FileText, ArrowUp, ArrowDown } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
@@ -24,24 +24,29 @@ interface Category {
   type: string
 }
 
-const accountTypes = [
-  { value: 'CHECKING', label: 'Conta Corrente', icon: Landmark },
-  { value: 'SAVINGS', label: 'Poupança', icon: PiggyBank },
-  { value: 'INVESTMENT', label: 'Investimento', icon: Wallet },
-  { value: 'CASH', label: 'Dinheiro', icon: CreditCard },
-]
+interface AccountType {
+  id: string
+  name: string
+}
 
 export default function Accounts() {
   const { organization } = useAuth()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [accountTypes, setAccountTypes] = useState<AccountType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  
+  // Account Types Manager State
+  const [isManageTypesOpen, setIsManageTypesOpen] = useState(false)
+  const [newTypeName, setNewTypeName] = useState('')
+  const [editingTypeId, setEditingTypeId] = useState<string | null>(null)
+  
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   
   // Account Form State
   const [name, setName] = useState('')
-  const [type, setType] = useState('CHECKING')
+  const [type, setType] = useState('')
   const [balance, setBalance] = useState('0')
 
   // Income Entry State
@@ -68,6 +73,7 @@ export default function Accounts() {
     if (organization) {
       fetchAccounts()
       fetchCategories()
+      fetchAccountTypes()
     }
   }, [organization])
 
@@ -101,10 +107,20 @@ export default function Accounts() {
     }
   }
 
+  async function fetchAccountTypes() {
+    try {
+      const data = await apiService.get('account_types', { organizationId: organization.organizationId })
+      setAccountTypes(data)
+      if (data.length > 0 && !type) setType(data[0].id)
+    } catch (error) {
+      console.error('Erro ao carregar tipos de conta', error)
+    }
+  }
+
   function handleOpenCreate() {
     setEditingAccount(null)
     setName('')
-    setType('CHECKING')
+    setType(accountTypes.length > 0 ? accountTypes[0].id : '')
     setBalance('0,00')
     setIsDrawerOpen(true)
   }
@@ -236,6 +252,36 @@ export default function Accounts() {
     }
   }
 
+  // Manage Types Handlers
+  async function handleSaveType() {
+    if (!newTypeName.trim()) return
+    try {
+      if (editingTypeId) {
+        await apiService.put(`account_types`, editingTypeId, { name: newTypeName })
+        toast.success('Tipo atualizado!')
+      } else {
+        await apiService.post('account_types', { name: newTypeName, organizationId: organization.organizationId })
+        toast.success('Tipo criado!')
+      }
+      setNewTypeName('')
+      setEditingTypeId(null)
+      fetchAccountTypes()
+    } catch (error) {
+        toast.error('Erro ao salvar tipo.')
+    }
+  }
+
+  async function handleDeleteType(id: string) {
+    if (!window.confirm("Deseja mesmo remover este tipo de conta?")) return
+    try {
+      await apiService.delete('account_types', id)
+      toast.success('Tipo removido!')
+      fetchAccountTypes()
+    } catch (error) {
+      toast.error('Erro ao remover tipo.')
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -266,12 +312,12 @@ export default function Accounts() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {accounts.map(account => {
-              const TypeIcon = accountTypes.find(t => t.value === account.type)?.icon || Landmark
+              const typeName = accountTypes.find(t => t.id === account.type)?.name || account.type
               return (
                 <div key={account.id} className="group bg-app-card border border-app p-6 rounded-3xl hover:border-app-accent/30 transition-all duration-300 shadow-sm hover:shadow-xl">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="p-3 bg-app-soft rounded-2xl text-app-accent">
-                      <TypeIcon className="w-6 h-6" />
+                      <Landmark className="w-6 h-6" />
                     </div>
                     <div className="flex items-center gap-1">
                       <button 
@@ -287,6 +333,9 @@ export default function Accounts() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
+                  </div>
+                  <div className="mb-4">
+                     <span className="text-[10px] font-bold text-app-text-dim uppercase tracking-wider">{typeName}</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-app-text mb-1">{account.name}</h3>
@@ -555,14 +604,23 @@ export default function Accounts() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-app-text-dim">Tipo de Conta</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-app-text-dim">Tipo de Conta</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsManageTypesOpen(true)}
+                    className="text-xs font-bold text-app-accent hover:underline flex items-center gap-1"
+                  >
+                    Gerenciar Tipos <Plus className="w-3 h-3" />
+                  </button>
+                </div>
                 <select 
                   value={type}
                   onChange={e => setType(e.target.value)}
-                  className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono"
+                  className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono appearance-none"
                 >
                   {accountTypes.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
               </div>
@@ -595,6 +653,53 @@ export default function Accounts() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Types Drawer */}
+      {isManageTypesOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-app-card border border-app w-full max-w-sm rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold text-app-text mb-4">Gerenciar Tipos de Conta</h2>
+            
+            <div className="flex gap-2 mb-6">
+              <input 
+                autoFocus
+                value={newTypeName}
+                onChange={e => setNewTypeName(e.target.value)}
+                placeholder="Novo tipo (ex: Vale Refeição)"
+                className="flex-1 bg-app-bg border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:outline-none focus:border-app-accent"
+              />
+              <button 
+                type="button"
+                onClick={handleSaveType}
+                className="bg-app-accent text-app-bg px-4 py-2 rounded-xl font-bold text-sm"
+              >
+                {editingTypeId ? 'Salvar' : 'Adicionar'}
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto mb-6 custom-scrollbar pr-2">
+              {accountTypes.map(t => (
+                <div key={t.id} className="flex items-center justify-between p-2 hover:bg-app-soft/50 rounded-lg">
+                  <span className="text-sm font-medium text-app-text">{t.name}</span>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => { setEditingTypeId(t.id); setNewTypeName(t.name); }} className="p-1.5 text-app-text-dim hover:text-app-text"><Pencil className="w-3.5 h-3.5" /></button>
+                    {!['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH'].includes(t.id) && (
+                      <button type="button" onClick={() => handleDeleteType(t.id)} className="p-1.5 text-app-text-dim hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => { setIsManageTypesOpen(false); setEditingTypeId(null); setNewTypeName(''); }}
+              className="w-full bg-app-soft text-app-text-dim py-3 rounded-xl font-bold hover:text-app-text"
+            >
+              Concluído
+            </button>
           </div>
         </div>
       )}

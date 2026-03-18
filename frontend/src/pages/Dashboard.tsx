@@ -12,12 +12,22 @@ export default function Dashboard() {
   const { organization } = useAuth();
   const [summary, setSummary] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [filterMonth, setFilterMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
         setIsLoading(true);
-        const data = await apiService.get('dashboard', { organizationId: organization.organizationId });
+        const [year, month] = filterMonth.split('-');
+        const data = await apiService.get('dashboard', { 
+          organizationId: organization.organizationId,
+          month,
+          year,
+          _t: Date.now()
+        });
         setSummary(data);
       } catch (error) {
         console.error('Error fetching dashboard:', error);
@@ -26,12 +36,12 @@ export default function Dashboard() {
       }
     }
     if (organization) fetchDashboard();
-  }, [organization]);
+  }, [organization, filterMonth]);
 
   const cards = [
-    { name: 'Saldo Total', value: summary?.remaining || 0, icon: Wallet, color: 'text-app-text' },
     { name: 'Receitas', value: summary?.income || 0, icon: TrendingUp, color: 'text-emerald-400' },
     { name: 'Despesas', value: summary?.expenses || 0, icon: TrendingDown, color: 'text-rose-400' },
+    { name: 'Saldo do Mês', value: (summary?.income || 0) - (summary?.expenses || 0), icon: Wallet, color: 'text-app-text' },
   ];
 
   if (isLoading) {
@@ -44,12 +54,52 @@ export default function Dashboard() {
     );
   }
 
+  const months = [
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' }
+  ];
+  const currentSystemYear = new Date().getFullYear();
+  const years = Array.from({length: 11}, (_, i) => currentSystemYear - 5 + i);
+
+  const [selectedYear, selectedMonth] = filterMonth.split('-');
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-app-text tracking-tight">Painel</h1>
-          <p className="text-app-text-dim mt-1">Bem-vindo de volta! Aqui está um resumo das suas finanças.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-app-text tracking-tight">Painel</h1>
+            <p className="text-app-text-dim mt-1">Bem-vindo de volta! Aqui está um resumo das suas finanças.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-app-text-dim">Mês:</span>
+            <div className="flex items-center gap-2">
+              <select 
+                value={selectedMonth} 
+                onChange={(e) => setFilterMonth(`${selectedYear}-${e.target.value}`)}
+                className="bg-app border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:outline-none focus:border-app-accent cursor-pointer"
+              >
+                {months.map(m => <option key={m.value} value={m.value} className="bg-app-card text-app-text">{m.label}</option>)}
+              </select>
+              <select 
+                value={selectedYear} 
+                onChange={(e) => setFilterMonth(`${e.target.value}-${selectedMonth}`)}
+                className="bg-app border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:outline-none focus:border-app-accent cursor-pointer"
+              >
+                {years.map(y => <option key={y} value={y} className="bg-app-card text-app-text">{y}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
