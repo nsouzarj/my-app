@@ -30,7 +30,7 @@ $stmt = $pdo->prepare("SELECT t.*, a.name as accountName, c.name as categoryName
                        LEFT JOIN accounts a ON t.accountId = a.id 
                        LEFT JOIN categories c ON t.categoryId = c.id
                        WHERE t.organizationId = ? 
-                       ORDER BY t.date DESC LIMIT 5");
+                       ORDER BY t.createdAt DESC LIMIT 5");
 $stmt->execute([$organizationId]);
 $recentTransactions = $stmt->fetchAll();
 foreach ($recentTransactions as &$t) $t['amount'] = (float)$t['amount'];
