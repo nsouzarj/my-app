@@ -125,7 +125,8 @@ export default function Transactions() {
     setDescription(tx.description)
     setAmount(tx.amount.toFixed(2).replace('.', ','))
     setDate(new Date(tx.date).toISOString().split('T')[0])
-    setType(tx.type)
+    const normalizedType = tx.type.charAt(0).toUpperCase() + tx.type.slice(1).toLowerCase() as 'Income' | 'Expense'
+    setType(normalizedType)
     setAccountId(tx.accountId)
     setCategoryId(tx.categoryId)
     setDueDate(tx.due_date ? new Date(tx.due_date).toISOString().split('T')[0] : '')
@@ -277,133 +278,220 @@ export default function Transactions() {
           </button>
         </div>
 
-        <div className="bg-app-card border border-app rounded-3xl overflow-hidden transition-all duration-500 shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-app">
-                  <th 
-                    className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase cursor-pointer hover:text-app-text transition-colors"
-                    onClick={() => toggleSort('date')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Data {sortBy === 'date' && (sortOrder === 'ASC' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase cursor-pointer hover:text-app-text transition-colors"
-                    onClick={() => toggleSort('description')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Descrição {sortBy === 'description' && (sortOrder === 'ASC' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase">Conta/Categoria</th>
-                  <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase">Status/Venc.</th>
-                  <th 
-                    className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase text-right cursor-pointer hover:text-app-text transition-colors"
-                    onClick={() => toggleSort('amount')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      Valor {sortBy === 'amount' && (sortOrder === 'ASC' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-app">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-20 text-center">
-                       <LoadingSpinner size="md" label="Carregando transações..." />
-                    </td>
+        <div className="space-y-4">
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-app-card border border-app rounded-3xl overflow-hidden transition-all duration-500 shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-app">
+                    <th 
+                      className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase cursor-pointer hover:text-app-text transition-colors"
+                      onClick={() => toggleSort('date')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Data {sortBy === 'date' && (sortOrder === 'ASC' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                      </div>
+                    </th>
+                    <th 
+                      className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase cursor-pointer hover:text-app-text transition-colors"
+                      onClick={() => toggleSort('description')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Descrição {sortBy === 'description' && (sortOrder === 'ASC' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase">Conta/Categoria</th>
+                    <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase">Status/Venc.</th>
+                    <th 
+                      className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase text-right cursor-pointer hover:text-app-text transition-colors"
+                      onClick={() => toggleSort('amount')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        Valor {sortBy === 'amount' && (sortOrder === 'ASC' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase text-right">Ações</th>
                   </tr>
-                ) : transactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center">
-                       <Search className="w-12 h-12 text-app-text-dim mx-auto mb-4" />
-                       <p className="text-app-text-dim">Nenhuma transação encontrada.</p>
-                    </td>
-                  </tr>
-                ) : (
-                  transactions.map(tx => (
-                    <tr key={tx.id} className="hover:bg-app-soft/30 transition-colors group">
-                      <td className="px-6 py-4 text-sm text-app-text-dim font-mono">
-                        {formatDate(tx.date)}
+                </thead>
+                <tbody className="divide-y divide-app">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-20 text-center">
+                         <LoadingSpinner size="md" label="Carregando transações..." />
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-app-text">{tx.description}</span>
-                          <span className={`text-[10px] font-bold uppercase ${tx.type.toLowerCase() === 'income' ? 'text-app-income' : 'text-app-expense'}`}>
-                            {tx.type.toLowerCase() === 'income' ? 'Receita' : 'Despesa'}
-                          </span>
-                        </div>
+                    </tr>
+                  ) : transactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-20 text-center">
+                         <Search className="w-12 h-12 text-app-text-dim mx-auto mb-4" />
+                         <p className="text-app-text-dim">Nenhuma transação encontrada.</p>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5 text-xs text-app-text-dim font-medium">
-                             <Landmark size={12} className="opacity-60" />
-                             {tx.accountName || 'N/A'}
+                    </tr>
+                  ) : (
+                    transactions.map(tx => (
+                      <tr key={tx.id} className="hover:bg-app-soft/30 transition-colors group">
+                        <td className="px-6 py-4 text-sm text-app-text-dim font-mono">
+                          {formatDate(tx.date)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-app-text">{tx.description}</span>
+                            <span className={`text-[10px] font-bold uppercase ${tx.type.toLowerCase() === 'income' ? 'text-app-income' : 'text-app-expense'}`}>
+                              {tx.type.toLowerCase() === 'income' ? 'Receita' : 'Despesa'}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-app-text-dim">
-                             <Tags size={12} style={{ color: categories.find(c => c.id === tx.categoryId)?.color }} />
-                             {tx.categoryName || 'N/A'}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {tx.due_date ? (
+                        </td>
+                        <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">
-                            <span className={cn(
-                              "text-[10px] font-black uppercase px-2 py-0.5 rounded-full w-fit",
-                              tx.status === 'paid' ? "bg-emerald-500/10 text-emerald-500" : 
-                              (new Date(tx.due_date) < new Date() ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500")
-                            )}>
-                              {tx.status === 'paid' ? 'Pago' : (new Date(tx.due_date) < new Date() ? 'Atrasado' : 'Pendente')}
-                            </span>
-                            <span className="text-[10px] text-app-text-dim font-bold">
-                              Vence {formatDate(tx.due_date)}
-                            </span>
-                            {tx.status === 'paid' && tx.payment_date && (
-                              <span className="text-[10px] text-emerald-500 font-bold">
-                                Pago em {formatDate(tx.payment_date)}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-1.5 text-xs text-app-text-dim font-medium">
+                               <Landmark size={12} className="opacity-60" />
+                               {tx.accountName || 'N/A'}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-app-text-dim">
+                               <Tags size={12} style={{ color: categories.find(c => c.id === tx.categoryId)?.color }} />
+                               {tx.categoryName || 'N/A'}
+                            </div>
                           </div>
-                        ) : (
-                          <span className="text-[10px] text-app-text-dim font-medium">Sem vencimento</span>
-                        )}
-                      </td>
-                      <td className={`px-6 py-4 text-sm font-black text-right whitespace-nowrap ${tx.type.toLowerCase() === 'income' ? 'text-app-income' : 'text-app-expense'}`}>
+                        </td>
+                        <td className="px-6 py-4">
+                          {tx.due_date ? (
+                            <div className="flex flex-col gap-1">
+                              <span className={cn(
+                                "text-[10px] font-black uppercase px-2 py-0.5 rounded-full w-fit",
+                                tx.status === 'paid' ? "bg-emerald-500/10 text-emerald-500" : 
+                                (new Date(tx.due_date) < new Date() ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500")
+                              )}>
+                                {tx.status === 'paid' ? 'Pago' : (new Date(tx.due_date) < new Date() ? 'Atrasado' : 'Pendente')}
+                              </span>
+                              <span className="text-[10px] text-app-text-dim font-bold">
+                                Vence {formatDate(tx.due_date)}
+                              </span>
+                              {tx.status === 'paid' && tx.payment_date && (
+                                <span className="text-[10px] text-emerald-500 font-bold">
+                                  Pago em {formatDate(tx.payment_date)}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-app-text-dim font-medium">Sem vencimento</span>
+                          )}
+                        </td>
+                        <td className={`px-6 py-4 text-sm font-black text-right whitespace-nowrap ${tx.type.toLowerCase() === 'income' ? 'text-app-income' : 'text-app-expense'}`}>
+                          {new Intl.NumberFormat('pt-BR', { 
+                            style: 'currency', 
+                            currency: 'BRL',
+                            signDisplay: 'always'
+                          }).format(tx.type.toLowerCase() === 'income' ? tx.amount : -tx.amount)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            {tx.status === 'pending' && (
+                              <button 
+                                onClick={() => setConfirmPay(tx)}
+                                className="p-2 text-emerald-500 hover:bg-emerald-500/10 transition-colors rounded-lg flex items-center gap-1 text-[10px] font-black uppercase"
+                              >
+                                Pagar
+                              </button>
+                            )}
+                            <button onClick={() => handleOpenEdit(tx)} className="p-2 text-app-text-dim hover:text-app-text transition-colors bg-app-bg/50 sm:bg-transparent rounded-lg">
+                              <Pencil size={16} />
+                            </button>
+                            <button onClick={() => setConfirmDelete(tx.id)} className="p-2 text-app-text-dim hover:text-red-400 transition-colors bg-app-bg/50 sm:bg-transparent rounded-lg">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {isLoading ? (
+              <div className="py-20 flex justify-center">
+                <LoadingSpinner size="md" label="Carregando..." />
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="py-20 text-center bg-app-card border border-app rounded-3xl">
+                 <Search className="w-12 h-12 text-app-text-dim mx-auto mb-4 opacity-20" />
+                 <p className="text-app-text-dim">Nenhuma transação encontrada.</p>
+              </div>
+            ) : (
+              transactions.map(tx => (
+                <div key={tx.id} className="bg-app-card border border-app rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden group">
+                  {/* Accent Line for Type */}
+                  <div className={`absolute top-0 left-0 w-1.5 h-full ${tx.type.toLowerCase() === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                  
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1 pl-2">
+                      <p className="text-[10px] font-mono text-app-text-dim">{formatDate(tx.date)}</p>
+                      <h3 className="text-sm font-bold text-app-text leading-tight">{tx.description}</h3>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-black ${tx.type.toLowerCase() === 'income' ? 'text-app-income' : 'text-app-expense'}`}>
                         {new Intl.NumberFormat('pt-BR', { 
                           style: 'currency', 
                           currency: 'BRL',
                           signDisplay: 'always'
                         }).format(tx.type.toLowerCase() === 'income' ? tx.amount : -tx.amount)}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                          {tx.status === 'pending' && (
-                            <button 
-                              onClick={() => setConfirmPay(tx)}
-                              className="p-2 text-emerald-500 hover:bg-emerald-500/10 transition-colors rounded-lg flex items-center gap-1 text-[10px] font-black uppercase"
-                            >
-                              Pagar
-                            </button>
-                          )}
-                          <button onClick={() => handleOpenEdit(tx)} className="p-2 text-app-text-dim hover:text-app-text transition-colors bg-app-bg/50 sm:bg-transparent rounded-lg">
-                            <Pencil size={16} />
-                          </button>
-                          <button onClick={() => setConfirmDelete(tx.id)} className="p-2 text-app-text-dim hover:text-red-400 transition-colors bg-app-bg/50 sm:bg-transparent rounded-lg">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </p>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full inline-block mt-1 ${tx.type.toLowerCase() === 'income' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                        {tx.type.toLowerCase() === 'income' ? 'Receita' : 'Despesa'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 pl-2">
+                    <div className="flex items-center gap-1.5 text-[10px] text-app-text-dim font-medium bg-app-soft px-2 py-1 rounded-lg">
+                       <Landmark size={10} className="opacity-60" />
+                       {tx.accountName || 'N/A'}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-app-text-dim font-medium bg-app-soft px-2 py-1 rounded-lg">
+                       <Tags size={10} style={{ color: categories.find(c => c.id === tx.categoryId)?.color }} />
+                       {tx.categoryName || 'N/A'}
+                    </div>
+                  </div>
+
+                  {tx.due_date && (
+                    <div className="flex items-center justify-between pl-2 pt-2 border-t border-app">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-app-text-dim font-bold">Vencimento</span>
+                        <span className="text-[10px] text-app-text font-black">{formatDate(tx.due_date)}</span>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-black uppercase px-2 py-1 rounded-xl",
+                        tx.status === 'paid' ? "bg-emerald-500/10 text-emerald-500" : 
+                        (new Date(tx.due_date) < new Date() ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500")
+                      )}>
+                        {tx.status === 'paid' ? 'Pago' : (new Date(tx.due_date) < new Date() ? 'Atrasado' : 'Pendente')}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    {tx.status === 'pending' && (
+                      <button 
+                        onClick={() => setConfirmPay(tx)}
+                        className="p-2 text-emerald-500 hover:bg-emerald-400 font-black text-[10px] uppercase tracking-wider"
+                      >
+                        Pagar
+                      </button>
+                    )}
+                    <button onClick={() => handleOpenEdit(tx)} className="p-2.5 bg-app-soft text-app-text rounded-xl active:scale-95 transition-all">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => setConfirmDelete(tx.id)} className="p-2.5 bg-rose-500/10 text-rose-500 rounded-xl active:scale-95 transition-all">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
