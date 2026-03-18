@@ -36,8 +36,8 @@ if ($method === 'POST') {
     $initialBalance = (float)$data['balance'];
     if ($initialBalance > 0) {
         $txId = bin2hex(random_bytes(16));
-        $stmtTx = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, organizationId, status, createdAt, updatedAt) 
-                                 VALUES (?, ?, ?, NOW(), 'income', ?, ?, 'paid', NOW(), NOW())");
+        $stmtTx = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, organizationId, categoryId, status, createdAt, updatedAt) 
+                                 VALUES (?, ?, ?, NOW(), 'income', ?, ?, '16272b2fbb47d1feb74e94cfeed9032a', 'paid', NOW(), NOW())");
         $stmtTx->execute([
             $txId,
             $initialBalance,
