@@ -31,6 +31,9 @@ try {
 }
 
 function getJsonInput() {
+    if (isset($GLOBALS['MOCK_INPUT'])) {
+        return json_decode($GLOBALS['MOCK_INPUT'], true);
+    }
     return json_decode(file_get_contents('php://input'), true);
 }
 

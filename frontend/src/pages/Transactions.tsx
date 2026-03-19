@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -29,6 +30,9 @@ interface Transaction {
 
 export default function Transactions() {
   const { organization } = useAuth()
+  const [searchParams] = useSearchParams()
+  const initialStatus = searchParams.get('status') as 'all' | 'paid' | 'pending' || 'all'
+  
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [accounts, setAccounts] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -53,7 +57,7 @@ export default function Transactions() {
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>(initialStatus)
 
   // Confirm State (Restored)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -69,8 +73,8 @@ export default function Transactions() {
       setIsLoading(true)
       const params: any = { 
         organizationId: organization.organizationId,
-        startDate: format(startOfMonth(selectedDate), 'yyyy-MM-dd'),
-        endDate: format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
+        startDate: statusFilter === 'pending' ? '2000-01-01' : format(startOfMonth(selectedDate), 'yyyy-MM-dd'),
+        endDate: statusFilter === 'pending' ? '2100-12-31' : format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
         sortBy,
         order: sortOrder,
         type: typeFilter,

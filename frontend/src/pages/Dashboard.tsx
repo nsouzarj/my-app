@@ -259,7 +259,7 @@ export default function Dashboard() {
               </div>
             </div>
             <Link 
-              to="/transactions" 
+              to="/transactions?status=pending" 
               className={cn(
                 "px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2",
                 summary.pendingBills.overdueCount > 0 ? "bg-rose-500 text-white hover:bg-rose-600" : "bg-amber-500 text-white hover:bg-amber-600"
