@@ -3,14 +3,14 @@ import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw } from 'lucide-react'
+import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw, Trash2, AlertOctagon } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { cn } from '../lib/utils'
 
 export default function Settings() {
-  const { user, organization, updateUser } = useAuth()
+  const { user, organization, updateUser, updateOrganization, logout } = useAuth()
   const { skin, setSkin } = useTheme()
   const [orgName, setOrgName] = useState('')
   const [fullName, setFullName] = useState('')
@@ -18,6 +18,7 @@ export default function Settings() {
   const [isReconciling, setIsReconciling] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isReconcileConfirmOpen, setIsReconcileConfirmOpen] = useState(false)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
 
   const skins = [
     { id: 'midnight', name: 'Midnight', color: 'bg-zinc-100', accent: 'bg-white border-zinc-200' },
@@ -58,6 +59,7 @@ export default function Settings() {
       })
 
       updateUser({ ...user, fullName })
+      updateOrganization({ ...organization, name: orgName })
       toast.success('Configurações salvas com sucesso!')
     } catch (error) {
       toast.error('Erro ao salvar configurações.')
@@ -84,6 +86,30 @@ export default function Settings() {
       toast.error(error.message || 'Erro ao sincronizar saldos.')
     } finally {
       setIsReconciling(false)
+    }
+  }
+
+  async function performDeleteAccount() {
+    setIsDeleteConfirmOpen(false)
+    setIsLoading(true)
+    try {
+      const response = await apiService.post('auth/delete_account', {
+        userId: user.id,
+        organizationId: organization.organizationId
+      })
+
+      if (response.success) {
+        toast.success('Sua conta foi excluída permanentemente.')
+        // Logout e Redirecionar
+        setTimeout(() => {
+          logout()
+        }, 2000)
+      } else {
+        throw new Error(response.error)
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir conta.')
+      setIsLoading(false)
     }
   }
 
@@ -253,6 +279,35 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+
+            {/* Zona de Perigo */}
+            <div className="bg-red-500/5 border border-red-500/20 rounded-3xl p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-red-500/10 rounded-lg">
+                  <Trash2 size={20} className="text-red-500" />
+                </div>
+                <h3 className="text-lg font-bold text-red-500">Zona de Perigo</h3>
+              </div>
+              
+              <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                <h4 className="font-bold text-red-600 flex items-center gap-2">
+                  <AlertOctagon size={18} />
+                  Excluir Permanentemente Conta e Dados
+                </h4>
+                <p className="text-sm text-red-600/80 mt-2 leading-relaxed font-medium">
+                  Esta ação é irreversível. Todas as suas transações, contas, categorias e dados de perfil serão apagados para sempre de nossos servidores.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteConfirmOpen(true)}
+                  disabled={isLoading}
+                  className="mt-6 flex items-center gap-2 px-6 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-50 shadow-lg shadow-red-500/20"
+                >
+                  <Trash2 size={18} />
+                  Excluir Minha Conta e Dados
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -275,6 +330,17 @@ export default function Settings() {
         onConfirm={performReconcile}
         onClose={() => setIsReconcileConfirmOpen(false)}
         isLoading={isReconciling}
+      />
+
+      <ConfirmDialog 
+        isOpen={isDeleteConfirmOpen}
+        title="EXCLUIR CONTA PERMANENTEMENTE"
+        message="Esta ação é IRREVERSÍVEL. Todos os seus dados, configurações e histórico serão apagados PARA SEMPRE. Tem certeza absoluta que deseja excluir sua conta?"
+        confirmLabel="EXCLUIR TUDO"
+        onConfirm={performDeleteAccount}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        isLoading={isLoading}
+        variant="danger"
       />
     </DashboardLayout>
   )

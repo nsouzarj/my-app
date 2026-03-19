@@ -50,10 +50,11 @@ if ($method === 'PUT') {
     $data = getJsonInput();
     $id = $_GET['id'];
     
-    $stmt = $pdo->prepare("UPDATE account_types SET name = ?, updatedAt = NOW() WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE account_types SET name = ?, updatedAt = NOW() WHERE id = ? AND organizationId = ?");
     $stmt->execute([
         $data['name'],
-        $id
+        $id,
+        $data['organizationId']
     ]);
     
     echo json_encode(['success' => true]);
@@ -61,8 +62,15 @@ if ($method === 'PUT') {
 
 if ($method === 'DELETE') {
     $id = $_GET['id'];
-    $stmt = $pdo->prepare("DELETE FROM account_types WHERE id = ?");
-    $stmt->execute([$id]);
+    
+    // Proteção contra deletar tipos do sistema
+    if (in_array($id, ['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH'])) {
+        echo json_encode(['error' => 'Tipos do sistema não podem ser excluídos']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare("DELETE FROM account_types WHERE id = ? AND organizationId = ?");
+    $stmt->execute([$id, $organizationId]);
     echo json_encode(['success' => true]);
 }
 ?>

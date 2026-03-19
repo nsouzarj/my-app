@@ -33,12 +33,13 @@ if ($method === 'PUT') {
     $data = getJsonInput();
     $id = $_GET['id'];
     
-    $stmt = $pdo->prepare("UPDATE categories SET name = ?, type = ?, color = ?, updatedAt = NOW() WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE categories SET name = ?, type = ?, color = ?, updatedAt = NOW() WHERE id = ? AND organizationId = ?");
     $stmt->execute([
         $data['name'],
         $data['type'],
         $data['color'] ?? '#3b82f6',
-        $id
+        $id,
+        $data['organizationId']
     ]);
     
     echo json_encode(['success' => true]);
@@ -46,8 +47,8 @@ if ($method === 'PUT') {
 
 if ($method === 'DELETE') {
     $id = $_GET['id'];
-    $stmt = $pdo->prepare("DELETE FROM categories WHERE id = ?");
-    $stmt->execute([$id]);
+    $stmt = $pdo->prepare("DELETE FROM categories WHERE id = ? AND organizationId = ?");
+    $stmt->execute([$id, $organizationId]);
     echo json_encode(['success' => true]);
 }
 ?>

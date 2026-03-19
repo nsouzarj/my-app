@@ -110,7 +110,9 @@ export default function Categories() {
   const performDelete = async () => {
     if (!confirmDelete) return
     try {
-      await apiService.delete('categories', confirmDelete)
+      await apiService.delete('categories', confirmDelete, { 
+        organizationId: organization?.organizationId 
+      })
       toast.success('Categoria excluída')
       setConfirmDelete(null)
       fetchCategories()

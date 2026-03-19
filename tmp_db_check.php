@@ -1,4 +1,5 @@
 <?php
-require 'public/api/db.php';
-$stmt = $pdo->query("SHOW CREATE TABLE categories");
-print_r($stmt->fetch());
+require_once 'public/api/db.php';
+$stmt = $pdo->query('DESCRIBE account_types');
+echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC), JSON_PRETTY_PRINT);
+?>

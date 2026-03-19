@@ -58,6 +58,7 @@ export default function Transactions() {
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>(initialStatus)
+  const [categoryIdFilter, setCategoryIdFilter] = useState('all')
 
   // Confirm State (Restored)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -65,8 +66,13 @@ export default function Transactions() {
   const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false)
 
   useEffect(() => {
-    if (organization) fetchData()
-  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter])
+    if (organization) {
+      setTransactions([])
+      setAccounts([])
+      setCategories([])
+      fetchData()
+    }
+  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter, categoryIdFilter])
 
   async function fetchData() {
     try {
@@ -78,7 +84,8 @@ export default function Transactions() {
         sortBy,
         order: sortOrder,
         type: typeFilter,
-        statusFilter: statusFilter
+        statusFilter: statusFilter,
+        categoryId: categoryIdFilter
       }
       
       const [t, a, c] = await Promise.all([
@@ -181,7 +188,9 @@ export default function Transactions() {
   async function performDelete() {
     if (!confirmDelete) return
     try {
-      await apiService.delete('transactions', confirmDelete)
+      await apiService.delete('transactions', confirmDelete, { 
+        organizationId: organization.organizationId 
+      })
       toast.success('Transação removida com sucesso!')
       setConfirmDelete(null)
       fetchData()
@@ -262,6 +271,17 @@ export default function Transactions() {
           </div>
 
           <div className="flex items-center gap-2">
+            <select
+              value={categoryIdFilter}
+              onChange={(e) => setCategoryIdFilter(e.target.value)}
+              className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all max-w-[140px] truncate"
+            >
+              <option value="all">Todas Categorias</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <div className="h-4 w-px bg-app-soft mx-1"></div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}

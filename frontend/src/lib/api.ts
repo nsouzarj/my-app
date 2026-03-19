@@ -25,8 +25,8 @@ export const apiService = {
     const response = await api.put(`/${endpoint}.php?id=${id}`, data);
     return response.data;
   },
-  delete: async (endpoint: string, id: string) => {
-    const response = await api.delete(`/${endpoint}.php?id=${id}`);
+  delete: async (endpoint: string, id: string, params = {}) => {
+    const response = await api.delete(`/${endpoint}.php?id=${id}`, { params });
     return response.data;
   },
   auth: {

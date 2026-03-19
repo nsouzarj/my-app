@@ -71,6 +71,7 @@ export default function Accounts() {
 
   useEffect(() => {
     if (organization) {
+      setAccounts([]) // Clear previous data immediately
       fetchAccounts()
       fetchCategories()
       fetchAccountTypes()
@@ -110,9 +111,14 @@ export default function Accounts() {
   async function fetchAccountTypes() {
     try {
       const data = await apiService.get('account_types', { organizationId: organization.organizationId })
-      setAccountTypes(data)
-      if (data.length > 0 && !type) setType(data[0].id)
+      if (Array.isArray(data)) {
+        setAccountTypes(data)
+        if (data.length > 0 && !type) setType(data[0].id)
+      } else {
+        setAccountTypes([])
+      }
     } catch (error) {
+      setAccountTypes([])
       console.error('Erro ao carregar tipos de conta', error)
     }
   }
@@ -243,7 +249,9 @@ export default function Accounts() {
   async function performDelete() {
     if (!confirmDelete) return
     try {
-      await apiService.delete('accounts', confirmDelete)
+      await apiService.delete('accounts', confirmDelete, { 
+        organizationId: organization.organizationId 
+      })
       toast.success('Conta removida!')
       setConfirmDelete(null)
       fetchAccounts()
@@ -274,7 +282,9 @@ export default function Accounts() {
   async function handleDeleteType(id: string) {
     if (!window.confirm("Deseja mesmo remover este tipo de conta?")) return
     try {
-      await apiService.delete('account_types', id)
+      await apiService.delete('account_types', id, { 
+        organizationId: organization.organizationId 
+      })
       toast.success('Tipo removido!')
       fetchAccountTypes()
     } catch (error) {
@@ -619,7 +629,7 @@ export default function Accounts() {
                   onChange={e => setType(e.target.value)}
                   className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono appearance-none"
                 >
-                  {accountTypes.map(t => (
+                  {Array.isArray(accountTypes) && accountTypes.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
@@ -681,7 +691,7 @@ export default function Accounts() {
             </div>
 
             <div className="space-y-2 max-h-60 overflow-y-auto mb-6 custom-scrollbar pr-2">
-              {accountTypes.map(t => (
+              {Array.isArray(accountTypes) && accountTypes.map(t => (
                 <div key={t.id} className="flex items-center justify-between p-2 hover:bg-app-soft/50 rounded-lg">
                   <span className="text-sm font-medium text-app-text">{t.name}</span>
                   <div className="flex gap-1">

@@ -125,3 +125,67 @@ body {
 .bg-app-soft { background-color: var(--bg-soft); }
 .border-app { border-color: var(--border-color); }
 .text-primary-skin { color: var(--primary-color); }
+
+/* Print Styles */
+@media print {
+  @page {
+    margin: 20mm;
+    size: A4;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  /* Hide UI elements */
+  aside, 
+  header, 
+  nav, 
+  button, 
+  .no-print,
+  select {
+    display: none !important;
+  }
+
+  /* Main content adjustments */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Color adjustment for charts/indicators */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .bg-app-card, .bg-app-soft {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  h1, h2, h3 {
+    color: black !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 10px !important;
+  }
+}
+
+.print-only {
+  display: none;
+}

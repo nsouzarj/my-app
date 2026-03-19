@@ -60,6 +60,12 @@ if ($method === 'GET') {
         $sql .= " AND t.status = ?";
         $params[] = $statusFilter;
     }
+
+    $categoryIdFilter = $_GET['categoryId'] ?? null;
+    if ($categoryIdFilter && $categoryIdFilter !== 'all') {
+        $sql .= " AND t.categoryId = ?";
+        $params[] = $categoryIdFilter;
+    }
     
     $sql .= " ORDER BY {$orderBy} {$order}";
             
@@ -131,7 +137,7 @@ if ($method === 'PUT') {
         status = ?,
         is_fixed = ?,
         updatedAt = NOW() 
-        WHERE id = ?");
+        WHERE id = ? AND organizationId = ?");
         
     $stmt->execute([
         $amountInput,
@@ -144,7 +150,8 @@ if ($method === 'PUT') {
         $data['payment_date'] ?? null,
         $data['status'] ?? 'paid',
         $data['is_fixed'] ?? 0,
-        $id
+        $id,
+        $data['organizationId']
     ]);
 
     // 3. Recalcular saldos
@@ -163,14 +170,19 @@ if ($method === 'PUT') {
 if ($method === 'DELETE') {
     $id = $_GET['id'];
 
-    // 1. Buscar conta antes de deletar
-    $stmtOld = $pdo->prepare("SELECT accountId FROM transactions WHERE id = ?");
-    $stmtOld->execute([$id]);
+    // 1. Buscar conta antes de deletar (Garantindo organização)
+    $stmtOld = $pdo->prepare("SELECT accountId FROM transactions WHERE id = ? AND organizationId = ?");
+    $stmtOld->execute([$id, $organizationId]);
     $accountId = $stmtOld->fetchColumn();
 
+    if (!$accountId) {
+        echo json_encode(['error' => 'Transação não encontrada ou acesso negado']);
+        exit;
+    }
+
     // 2. Deletar transação
-    $stmt = $pdo->prepare("DELETE FROM transactions WHERE id = ?");
-    $stmt->execute([$id]);
+    $stmt = $pdo->prepare("DELETE FROM transactions WHERE id = ? AND organizationId = ?");
+    $stmt->execute([$id, $organizationId]);
 
     // 3. Recalcular saldo da conta impactada
     if ($accountId) {

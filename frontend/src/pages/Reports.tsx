@@ -6,6 +6,7 @@ import { FileText, Download, PieChart as PieChartIcon, BarChart3 } from 'lucide-
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, PieChart, Pie } from 'recharts'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
+import { cn } from '../lib/utils'
 
 export default function Reports() {
   const { organization } = useAuth()
@@ -30,12 +31,28 @@ export default function Reports() {
     }
   }
 
-  const exportPDF = () => toast.success('Relatório pronto para exportação! (Simulação)')
+  const exportPDF = () => {
+    window.print()
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        {/* Print Only Header */}
+        <div className="print-only mb-10 border-b-2 border-app-text pb-6">
+          <div className="flex justify-between items-end">
+            <div>
+              <h1 className="text-4xl font-black text-black uppercase tracking-tighter">Relatório Financeiro</h1>
+              <p className="text-sm font-bold text-gray-500 mt-1">Gerado em {new Date().toLocaleDateString('pt-BR')}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-bold text-black">{organization?.name}</p>
+              <p className="text-xs text-gray-400">ID: {organization?.organizationId}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between no-print">
           <div>
             <h1 className="text-3xl font-bold text-app-text tracking-tight">Relatórios Detalhados</h1>
             <p className="text-app-text-dim mt-1">Visão analítica da sua saúde financeira.</p>
@@ -44,18 +61,43 @@ export default function Reports() {
              <select 
                value={period} 
                onChange={e => setPeriod(e.target.value)}
-               className="bg-app-card border border-app rounded-xl px-4 py-2 text-sm text-app-text font-bold outline-none"
+               className="bg-app-card border border-app rounded-xl px-4 py-2 text-sm text-app-text font-bold outline-none cursor-pointer hover:bg-app-soft transition-all"
              >
                <option value="month">Este Mês</option>
                <option value="year">Este Ano</option>
              </select>
              <button 
                onClick={exportPDF}
-               className="flex items-center gap-2 bg-app-text text-app-bg px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg text-sm"
+               className="flex items-center gap-2 bg-app-text text-app-bg px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg text-sm group"
              >
-               <Download size={16} />
+               <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
                Exportar PDF
              </button>
+          </div>
+        </div>
+
+        {/* Financial Summary Cards (Printable) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-app-card border border-app rounded-2xl p-6 print:border-gray-200">
+            <span className="text-xs font-bold text-app-text-dim uppercase tracking-wider">Receitas</span>
+            <p className="text-2xl font-black text-app-income mt-1">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(reportData?.income || 0)}
+            </p>
+          </div>
+          <div className="bg-app-card border border-app rounded-2xl p-6 print:border-gray-200">
+            <span className="text-xs font-bold text-app-text-dim uppercase tracking-wider">Despesas</span>
+            <p className="text-2xl font-black text-app-expense mt-1">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(reportData?.expenses || 0)}
+            </p>
+          </div>
+          <div className="bg-app-card border border-app rounded-2xl p-6 print:border-gray-200">
+            <span className="text-xs font-bold text-app-text-dim uppercase tracking-wider">Resultado</span>
+            <p className={cn(
+              "text-2xl font-black mt-1",
+              (reportData?.income - reportData?.expenses) >= 0 ? "text-app-income" : "text-app-expense"
+            )}>
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', signDisplay: 'always' }).format(reportData?.income - reportData?.expenses)}
+            </p>
           </div>
         </div>
 
@@ -66,7 +108,7 @@ export default function Reports() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Gastos por Categoria */}
-            <div className="bg-app-card border border-app rounded-2xl p-8">
+            <div className="bg-app-card border border-app rounded-2xl p-8 no-print">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                   <PieChartIcon size={20} className="text-app-accent" />
@@ -100,7 +142,7 @@ export default function Reports() {
             </div>
 
             {/* Comparativo de Saldo por Conta */}
-            <div className="bg-app-card border border-app rounded-2xl p-8">
+            <div className="bg-app-card border border-app rounded-2xl p-8 no-print">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                   <BarChart3 size={20} className="text-app-accent" />
@@ -132,14 +174,17 @@ export default function Reports() {
 
         {/* Summary Table */}
         <div className="bg-app-card border border-app rounded-3xl overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-app flex items-center gap-2">
+          <div className="p-6 border-b border-app flex items-center gap-2 no-print">
              <FileText size={18} className="text-app-accent" />
-             <h3 className="text-lg font-bold text-app-text">Resumo Mensal</h3>
+             <h3 className="text-lg font-bold text-app-text">Distribuição por Categoria</h3>
+          </div>
+          <div className="p-6 border-b border-app hidden print:block">
+             <h3 className="text-lg font-bold text-black uppercase">Detalhamento de Categorias</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-app-bg border-b border-app">
+                <tr className="bg-app-bg/50 border-b border-app print:bg-gray-50">
                   <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase tracking-wider">Categoria</th>
                   <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase tracking-wider text-right">Valor Total</th>
                   <th className="px-6 py-4 text-xs font-bold text-app-text-dim uppercase tracking-wider text-right">% do Total</th>
@@ -150,21 +195,28 @@ export default function Reports() {
                   <tr key={cat.name} className="hover:bg-app-soft/10 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }}></div>
-                         <span className="text-sm font-bold text-app-text">{cat.name}</span>
+                         <div className="w-3 h-3 rounded-full no-print" style={{ backgroundColor: cat.color }}></div>
+                         <span className="text-sm font-bold text-app-text print:text-black">{cat.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-3 text-sm font-black text-right text-app-text">
+                    <td className="px-6 py-3 text-sm font-black text-right text-app-text print:text-black">
                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.value)}
                     </td>
-                    <td className="px-6 py-3 text-sm text-right text-app-text-dim font-mono">
-                       {((cat.value / reportData.monthlyExpenses) * 100).toFixed(1)}%
+                    <td className="px-6 py-3 text-sm text-right text-app-text-dim font-mono print:text-gray-600">
+                       {reportData.expenses > 0 ? ((cat.value / reportData.expenses) * 100).toFixed(1) : '0.0'}%
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Print Only Footer */}
+        <div className="print-only mt-20 pt-10 border-t border-gray-200 text-center">
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+            Documento gerado pelo Sistema de Gestão Financeira Premium - {organization?.name}
+          </p>
         </div>
       </div>
     </DashboardLayout>

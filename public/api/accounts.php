@@ -85,11 +85,12 @@ if ($method === 'PUT') {
         ]);
     }
     
-    $stmt = $pdo->prepare("UPDATE accounts SET name = :name, type = :type, updatedAt = NOW() WHERE id = :id");
+    $stmt = $pdo->prepare("UPDATE accounts SET name = :name, type = :type, updatedAt = NOW() WHERE id = :id AND organizationId = :organizationId");
     $stmt->execute([
         ':name' => $data['name'],
         ':type' => $data['type'],
-        ':id' => $id
+        ':id' => $id,
+        ':organizationId' => $data['organizationId']
     ]);
 
     // 3. Recalcular saldo baseado no histórico consolidado
@@ -100,8 +101,8 @@ if ($method === 'PUT') {
 
 if ($method === 'DELETE') {
     $id = $_GET['id'];
-    $stmt = $pdo->prepare("DELETE FROM accounts WHERE id = :id");
-    $stmt->execute([':id' => $id]);
+    $stmt = $pdo->prepare("DELETE FROM accounts WHERE id = :id AND organizationId = :organizationId");
+    $stmt->execute([':id' => $id, ':organizationId' => $organizationId]);
     echo json_encode(['success' => true]);
 }
 ?>

@@ -4,12 +4,13 @@ import { apiService } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { cn, formatDate } from '../lib/utils';
 import { TrendingUp, TrendingDown, Wallet, Landmark, ArrowRight, PieChart as PieChartIcon, BarChart3, CalendarDays, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function Dashboard() {
   const { organization } = useAuth();
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [filterMonth, setFilterMonth] = useState<string>(() => {
@@ -18,12 +19,19 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
+    if (!isLoading && summary && (!summary.accounts || summary.accounts.length === 0)) {
+      navigate('/accounts');
+    }
+  }, [isLoading, summary, navigate]);
+
+  useEffect(() => {
     async function fetchDashboard() {
       try {
+        setSummary(null); // Clear previous data immediately
         setIsLoading(true);
         const [year, month] = filterMonth.split('-');
         const data = await apiService.get('dashboard', { 
-          organizationId: organization.organizationId,
+          organizationId: organization?.organizationId,
           month,
           year,
           _t: Date.now()
