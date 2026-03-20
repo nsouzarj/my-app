@@ -37,6 +37,34 @@ function getJsonInput() {
     return json_decode(file_get_contents('php://input'), true);
 }
 
+/**
+ * Segurança de Elite: Argon2id + Pepper
+ * A 'Pepper' é uma chave secreta mantida fora do banco de dados (neste arquivo).
+ * Se o banco vazar, o atacante não consegue nem começar o crack das senhas sem esta chave.
+ */
+define('AUTH_PEPPER', 'f1n4nc4s_pr3m1um_s3cr3t_2025_!@#');
+
+function hashUserPassword($password) {
+    // Combina a senha do usuário com a pimenta secreta
+    $peppered = hash_hmac('sha256', $password, AUTH_PEPPER);
+    return password_hash($peppered, PASSWORD_ARGON2ID);
+}
+
+function verifyUserPassword($password, $hash) {
+    // 1. Tentar verificar com a pimenta (Novo padrão)
+    $peppered = hash_hmac('sha256', $password, AUTH_PEPPER);
+    if (password_verify($peppered, $hash)) {
+        return true;
+    }
+    
+    // 2. Tentar verificar sem a pimenta (Legado/Bcrypt antigo)
+    if (password_verify($password, $hash)) {
+        return 'needs_rehash'; // Indica que a senha está correta mas precisa ser atualizada com a pimenta
+    }
+    
+    return false;
+}
+
 function recalculateAccountBalance($pdo, $accountId) {
     if (empty($accountId)) return;
 

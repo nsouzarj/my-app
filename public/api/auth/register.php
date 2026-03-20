@@ -22,7 +22,7 @@ try {
 
     // 2. Create User
     $userId = bin2hex(random_bytes(16));
-    $hashedPassword = password_hash($data['password'], PASSWORD_BCRYPT);
+    $hashedPassword = hashUserPassword($data['password']);
     $stmt = $pdo->prepare("INSERT INTO users (id, email, password, fullName, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())");
     $stmt->execute([$userId, $data['email'], $hashedPassword, $data['fullName'] ?? '']);
 

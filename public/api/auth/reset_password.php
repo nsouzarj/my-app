@@ -23,7 +23,7 @@ try {
     }
 
     // 2. Atualizar Senha e Limpar Token
-    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+    $hashedPassword = hashUserPassword($newPassword);
     
     $stmt = $pdo->prepare("UPDATE users SET password = ?, reset_token = NULL, reset_expiry = NULL WHERE id = ?");
     $stmt->execute([$hashedPassword, $user['id']]);

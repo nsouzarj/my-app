@@ -15,9 +15,18 @@ try {
     $stmt->execute([$data['email']]);
     $user = $stmt->fetch();
 
-    if (!$user || !password_verify($data['password'], $user['password'])) {
+    $verifyResult = $user ? verifyUserPassword($data['password'], $user['password']) : false;
+
+    if (!$user || !$verifyResult) {
         echo json_encode(['error' => 'Credenciais inválidas']);
         exit;
+    }
+
+    // Upgrade automático de hash (Migração transparente para Pepper + Argon2id)
+    if ($verifyResult === 'needs_rehash') {
+        $newHash = hashUserPassword($data['password']);
+        $stmtUpdate = $pdo->prepare("UPDATE users SET password = ?, updatedAt = NOW() WHERE id = ?");
+        $stmtUpdate->execute([$newHash, $user['id']]);
     }
 
     // 2. Fetch primary organization (for simplicity, first one found)
