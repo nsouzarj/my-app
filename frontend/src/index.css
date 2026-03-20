@@ -90,6 +90,132 @@
   --text-dim: #d6d3d1;
 }
 
+/* Modern Premium: Cyberpunk (Neon Cyan) */
+.skin-cyberpunk {
+  --bg-color: #050505;
+  --card-color: #0d0d0f;
+  --bg-soft: #121216;
+  --border-color: #1a1a1e;
+  --primary-color: #00f2ff;
+  --primary-dark: #70faff;
+  --text-dim: #4e5b6e;
+}
+
+/* Modern Premium: Nordic Shore (Frost) */
+.skin-nordic {
+  --bg-color: #2e3440;
+  --card-color: #3b4252;
+  --bg-soft: #434c5e;
+  --border-color: #4c566a;
+  --primary-color: #88c0d0;
+  --primary-dark: #8fbcbb;
+  --text-dim: #d8dee9;
+}
+
+/* Modern Premium: Black Velvet (Ruby) */
+.skin-velvet {
+  --bg-color: #000000;
+  --card-color: #090909;
+  --bg-soft: #111111;
+  --border-color: #1a1a1a;
+  --primary-color: #e11d48;
+  --primary-dark: #fb7185;
+  --text-dim: #9f1239;
+}
+
+/* Modern Premium: Deep Forest (Emerald) */
+.skin-forest {
+  --bg-color: #06100c;
+  --card-color: #0a1a15;
+  --bg-soft: #102a22;
+  --border-color: #1a3b30;
+  --primary-color: #22c55e;
+  --primary-dark: #4ade80;
+  --text-dim: #86efac;
+}
+
+/* Modern Premium: Snow Soft (Minimalist High Contrast) */
+.skin-snow {
+  --bg-color: #f8fafc;
+  --card-color: #ffffff;
+  --bg-soft: #f1f5f9;
+  --border-color: #e2e8f0;
+  --primary-color: #0f172a;
+  --primary-dark: #1e293b;
+  --text-dim: #64748b;
+  --accent-income: #059669;
+  --accent-expense: #dc2626;
+}
+
+/* Modern Premium: Solarized Light (Eye-Care Cream) */
+.skin-solar {
+  --bg-color: #fdf6e3;
+  --card-color: #eee8d5;
+  --bg-soft: #e3dbc5;
+  --border-color: #d3c6aa;
+  --primary-color: #586e75;
+  --primary-dark: #073642;
+  --text-dim: #93a1a1;
+  --accent-income: #2aa198;
+  --accent-expense: #cb4b16;
+}
+
+/* Modern Premium: Rose Quartz (Soft Pink) */
+.skin-rose {
+  --bg-color: #fff1f2;
+  --card-color: #ffffff;
+  --bg-soft: #ffe4e6;
+  --border-color: #fecdd3;
+  --primary-color: #881337;
+  --primary-dark: #be123c;
+  --text-dim: #fb7185;
+  --accent-income: #059669;
+  --accent-expense: #e11d48;
+}
+
+/* Modern Premium: Mint Fresh (Refreshing Green) */
+.skin-mint {
+  --bg-color: #f0fdf4;
+  --card-color: #ffffff;
+  --bg-soft: #dcfce7;
+  --border-color: #bbf7d0;
+  --primary-color: #166534;
+  --primary-dark: #15803d;
+  --text-dim: #22c55e;
+  --accent-income: #10b981;
+  --accent-expense: #ef4444;
+}
+
+/* Modern Premium: Sky Blue (Cloud) */
+.skin-sky {
+  --bg-color: #f0f9ff;
+  --card-color: #ffffff;
+  --bg-soft: #e0f2fe;
+  --border-color: #bae6fd;
+  --primary-color: #0c4a6e;
+  --primary-dark: #075985;
+  --text-dim: #0ea5e9;
+  --accent-income: #0ea5e9;
+  --accent-expense: #f43f5e;
+}
+
+/* Modern Premium: Sandstone (Earthy) */
+.skin-sand {
+  --bg-color: #fafaf9;
+  --card-color: #ffffff;
+  --bg-soft: #f5f5f4;
+  --border-color: #e7e5e4;
+  --primary-color: #44403c;
+  --primary-dark: #292524;
+  --text-dim: #78716c;
+  --accent-income: #166534;
+  --accent-expense: #991b1b;
+}
+
+.skin-snow .bg-app-card, .skin-solar .bg-app-card, .skin-rose .bg-app-card, .skin-mint .bg-app-card, .skin-sky .bg-app-card, .skin-sand .bg-app-card {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
 /* Light Skin (Premium Professional White) */
 .skin-light {
   --bg-color: #f1f5f9;

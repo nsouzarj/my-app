@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type ThemeSkin = 'midnight' | 'emerald' | 'ocean' | 'slate' | 'gold' | 'light' | 'system';
+type ThemeSkin = 'midnight' | 'emerald' | 'ocean' | 'slate' | 'gold' | 'light' | 'system' | 'cyberpunk' | 'nordic' | 'velvet' | 'forest' | 'snow' | 'solar' | 'rose' | 'mint' | 'sky' | 'sand';
 
 interface ThemeContextType {
   skin: ThemeSkin;
@@ -34,7 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     html.style.colorScheme = (skinToApply === 'light') ? 'light' : 'dark';
     
     // Remove all existing skin classes
-    const allSkins = ['skin-midnight', 'skin-emerald', 'skin-ocean', 'skin-slate', 'skin-gold', 'skin-light'];
+    const allSkins = ['skin-midnight', 'skin-emerald', 'skin-ocean', 'skin-slate', 'skin-gold', 'skin-light', 'skin-cyberpunk', 'skin-nordic', 'skin-velvet', 'skin-forest', 'skin-snow', 'skin-solar', 'skin-rose', 'skin-mint', 'skin-sky', 'skin-sand'];
     html.classList.remove(...allSkins);
     
     // Add new skin class
@@ -47,7 +47,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       ocean: '#082f49',
       slate: '#0f172a',
       gold: '#1c1917',
-      light: '#ffffff'
+      light: '#ffffff',
+      cyberpunk: '#050505',
+      nordic: '#2e3440',
+      velvet: '#000000',
+      forest: '#06100c',
+      snow: '#f8fafc',
+      solar: '#fdf6e3',
+      rose: '#fff1f2',
+      mint: '#f0fdf4',
+      sky: '#f0f9ff',
+      sand: '#fafaf9'
     };
     
     const themeMeta = document.querySelector('meta[name="theme-color"]');
