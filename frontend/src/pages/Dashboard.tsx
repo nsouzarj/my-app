@@ -53,7 +53,7 @@ export default function Dashboard() {
 
   const cards = [
     { 
-      name: 'Receitas', 
+      name: 'Receitas (Mês)', 
       value: summary?.income || 0, 
       icon: TrendingUp, 
       color: 'text-emerald-100',
@@ -61,7 +61,7 @@ export default function Dashboard() {
       borderColor: 'border-emerald-500'
     },
     { 
-      name: 'Despesas', 
+      name: 'Despesas (Mês)', 
       value: summary?.expenses || 0, 
       icon: TrendingDown, 
       color: 'text-rose-100',
@@ -69,12 +69,20 @@ export default function Dashboard() {
       borderColor: 'border-rose-500'
     },
     { 
-      name: 'Saldo do Mês', 
+      name: 'Resultado (Mês)', 
       value: monthlyBalance, 
       icon: Wallet, 
       color: monthlyBalance >= 0 ? 'text-sky-100' : 'text-amber-100',
       bgColor: monthlyBalance >= 0 ? 'bg-sky-600' : 'bg-amber-600',
       borderColor: monthlyBalance >= 0 ? 'border-sky-500' : 'border-amber-500'
+    },
+    { 
+      name: 'Saldo Geral', 
+      value: summary?.totalBalance || 0, 
+      icon: Landmark, 
+      color: 'text-indigo-100',
+      bgColor: 'bg-indigo-600',
+      borderColor: 'border-indigo-500'
     },
   ];
 
@@ -144,7 +152,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {cards.map((card) => (
             <div 
               key={card.name} 
