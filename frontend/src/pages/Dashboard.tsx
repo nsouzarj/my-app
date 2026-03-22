@@ -3,10 +3,11 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import { apiService } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { cn, formatDate } from '../lib/utils';
-import { TrendingUp, TrendingDown, Wallet, Landmark, ArrowRight, PieChart as PieChartIcon, BarChart3, CalendarDays, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Landmark, ArrowRight, PieChart as PieChartIcon, BarChart3, CalendarDays, AlertCircle, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { TransactionModal } from '../components/transactions/TransactionModal';
 
 export default function Dashboard() {
   const { organization } = useAuth();
@@ -24,25 +25,27 @@ export default function Dashboard() {
     }
   }, [isLoading, summary, navigate]);
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      try {
-        setSummary(null); // Clear previous data immediately
-        setIsLoading(true);
-        const [year, month] = filterMonth.split('-');
-        const data = await apiService.get('dashboard', { 
-          organizationId: organization?.organizationId,
-          month,
-          year,
-          _t: Date.now()
-        });
-        setSummary(data);
-      } catch (error) {
-        console.error('Error fetching dashboard:', error);
-      } finally {
-        setIsLoading(false);
-      }
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  async function fetchDashboard() {
+    try {
+      setIsLoading(true);
+      const [year, month] = filterMonth.split('-');
+      const data = await apiService.get('dashboard', { 
+        organizationId: organization?.organizationId,
+        month,
+        year,
+        _t: Date.now()
+      });
+      setSummary(data);
+    } catch (error) {
+      console.error('Error fetching dashboard:', error);
+    } finally {
+      setIsLoading(false);
     }
+  }
+
+  useEffect(() => {
     if (organization) fetchDashboard();
   }, [organization, filterMonth]);
 
@@ -89,23 +92,31 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold text-app-text tracking-tight">Painel</h1>
             <p className="text-app-text-dim mt-1">Bem-vindo de volta! Aqui está um resumo das suas finanças.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-app-text-dim">Mês:</span>
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <button
+               onClick={() => setIsModalOpen(true)}
+               className="hidden lg:flex items-center gap-2 bg-app-text text-app-bg px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-app-text/10"
+            >
+              <Plus size={16} /> Novo Lançamento
+            </button>
             <div className="flex items-center gap-2">
-              <select 
-                value={selectedMonth} 
-                onChange={(e) => setFilterMonth(`${selectedYear}-${e.target.value}`)}
-                className="bg-app border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:outline-none focus:border-app-accent cursor-pointer"
-              >
-                {months.map(m => <option key={m.value} value={m.value} className="bg-app-card text-app-text">{m.label}</option>)}
-              </select>
-              <select 
-                value={selectedYear} 
-                onChange={(e) => setFilterMonth(`${e.target.value}-${selectedMonth}`)}
-                className="bg-app border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:outline-none focus:border-app-accent cursor-pointer"
-              >
-                {years.map(y => <option key={y} value={y} className="bg-app-card text-app-text">{y}</option>)}
-              </select>
+              <span className="text-sm font-medium text-app-text-dim">Mês:</span>
+              <div className="flex items-center gap-2">
+                <select 
+                  value={selectedMonth} 
+                  onChange={(e) => setFilterMonth(`${selectedYear}-${e.target.value}`)}
+                  className="bg-app border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:outline-none focus:border-app-accent cursor-pointer"
+                >
+                  {months.map(m => <option key={m.value} value={m.value} className="bg-app-card text-app-text">{m.label}</option>)}
+                </select>
+                <select 
+                  value={selectedYear} 
+                  onChange={(e) => setFilterMonth(`${e.target.value}-${selectedMonth}`)}
+                  className="bg-app border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:outline-none focus:border-app-accent cursor-pointer"
+                >
+                  {years.map(y => <option key={y} value={y} className="bg-app-card text-app-text">{y}</option>)}
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -345,27 +356,44 @@ export default function Dashboard() {
                     Nenhuma conta cadastrada.
                   </div>
                 ) : (
-                  summary.accounts.map((acc: any) => (
-                    <div key={acc.id} className="flex items-center justify-between p-3 bg-app-soft/20 border border-app rounded-xl">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-app-soft rounded-lg text-app-text-dim">
-                          <Landmark size={18} />
+                  summary.accounts.map((acc: any) => {
+                    return (
+                      <div key={acc.id} className="flex items-center justify-between p-3 bg-app-soft/20 border border-app rounded-xl">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-app-soft rounded-lg text-app-text-dim">
+                            <Landmark size={18} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-app-text">{acc.name}</p>
+                            <p className="text-[10px] text-app-text-dim uppercase tracking-wider font-bold mt-0.5">Saldo atual</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-app-text">{acc.name}</p>
-                          <p className="text-[10px] text-app-text-dim uppercase tracking-wider font-bold mt-0.5">Saldo atual</p>
-                        </div>
+                        <span className="text-sm font-black text-app-text">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(acc.balance)}
+                        </span>
                       </div>
-                      <span className="text-sm font-black text-app-text">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(acc.balance)}
-                      </span>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
            </div>
         </div>
       </div>
+
+      {/* Floating Action Button (FAB) for Mobile */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="lg:hidden fixed bottom-8 right-6 w-16 h-16 bg-app-text text-app-bg rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-all z-50 border-4 border-app"
+        aria-label="Novo Lançamento"
+      >
+        <Plus size={32} />
+      </button>
+
+      <TransactionModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchDashboard}
+      />
     </DashboardLayout>
   );
 }

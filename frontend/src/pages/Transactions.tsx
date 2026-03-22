@@ -4,13 +4,13 @@ import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { Plus, Pencil, Trash2, Search, Landmark, Tags, ArrowUp, ArrowDown } from 'lucide-react'
+import { TransactionModal } from '../components/transactions/TransactionModal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { cn, formatDate } from '../lib/utils'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
 import { DateFilter } from '../components/ui/DateFilter'
-import { DateInput } from '../components/ui/DateInput'
 
 interface Transaction {
   id: string
@@ -34,24 +34,11 @@ export default function Transactions() {
   const initialStatus = searchParams.get('status') as 'all' | 'paid' | 'pending' || 'all'
   
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [accounts, setAccounts] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   
-  // Form State
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('0')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [type, setType] = useState<'Income' | 'Expense'>('Expense')
-  const [accountId, setAccountId] = useState('')
-  const [categoryId, setCategoryId] = useState('')
-  const [dueDate, setDueDate] = useState('')
-  const [paymentDate, setPaymentDate] = useState('')
-  const [status, setStatus] = useState<'paid' | 'pending'>('paid')
-  const [isFixed, setIsFixed] = useState(false)
-
   // Filters & Sorting State
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [sortBy, setSortBy] = useState('date')
@@ -60,16 +47,12 @@ export default function Transactions() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>(initialStatus)
   const [categoryIdFilter, setCategoryIdFilter] = useState('all')
 
-  // Confirm State (Restored)
+  // Confirm State
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [confirmPay, setConfirmPay] = useState<Transaction | null>(null)
-  const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false)
 
   useEffect(() => {
     if (organization) {
-      setTransactions([])
-      setAccounts([])
-      setCategories([])
       fetchData()
     }
   }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter, categoryIdFilter])
@@ -88,19 +71,14 @@ export default function Transactions() {
         categoryId: categoryIdFilter
       }
       
-      const [t, a, c] = await Promise.all([
+      const [t, c] = await Promise.all([
         apiService.get('transactions', params),
-        apiService.get('accounts', { organizationId: organization.organizationId }),
         apiService.get('categories', { organizationId: organization.organizationId })
       ])
       
       setTransactions(t)
-      setAccounts(a)
       setCategories(c)
-      
-      if (a.length > 0 && !accountId) setAccountId(a[0].id)
-      if (c.length > 0 && !categoryId) setCategoryId(c[0].id)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Erro ao carregar dados.')
     } finally {
       setIsLoading(false)
@@ -118,71 +96,12 @@ export default function Transactions() {
 
   function handleOpenCreate() {
     setEditingTransaction(null)
-    setDescription('')
-    setAmount('0,00')
-    setDate(new Date().toISOString().split('T')[0])
-    setType('Expense')
-    setDueDate('')
-    setPaymentDate('')
-    setStatus('paid')
-    setIsFixed(false)
-    if (accounts.length > 0) setAccountId(accounts[0].id)
-    if (categories.length > 0) setCategoryId(categories[0].id)
     setIsDrawerOpen(true)
   }
 
   function handleOpenEdit(tx: Transaction) {
     setEditingTransaction(tx)
-    setDescription(tx.description)
-    setAmount(tx.amount.toFixed(2).replace('.', ','))
-    setDate(new Date(tx.date).toISOString().split('T')[0])
-    const normalizedType = tx.type.charAt(0).toUpperCase() + tx.type.slice(1).toLowerCase() as 'Income' | 'Expense'
-    setType(normalizedType)
-    setAccountId(tx.accountId)
-    setCategoryId(tx.categoryId)
-    setDueDate(tx.due_date ? new Date(tx.due_date).toISOString().split('T')[0] : '')
-    setPaymentDate(tx.payment_date ? new Date(tx.payment_date).toISOString().split('T')[0] : '')
-    setStatus(tx.status || 'paid')
-    setIsFixed(tx.is_fixed === 1 || tx.is_fixed === true)
     setIsDrawerOpen(true)
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setIsConfirmSaveOpen(true)
-  }
-
-  async function performSave() {
-    setIsConfirmSaveOpen(false)
-    try {
-      const cleanAmount = amount.replace(/\./g, '').replace(',', '.')
-      const payload = {
-        description,
-        amount: parseFloat(cleanAmount),
-        date,
-        type,
-        accountId,
-        categoryId,
-        organizationId: organization.organizationId,
-        due_date: dueDate || null,
-        payment_date: paymentDate || null,
-        status,
-        is_fixed: isFixed ? 1 : 0
-      }
-
-      if (editingTransaction) {
-        await apiService.put('transactions', editingTransaction.id, payload)
-        toast.success('Transação atualizada!')
-      } else {
-        await apiService.post('transactions', payload)
-        toast.success('Lançamento realizado!')
-      }
-      
-      setIsDrawerOpen(false)
-      fetchData()
-    } catch (error) {
-      toast.error('Erro ao salvar transação.')
-    }
   }
 
   async function performDelete() {
@@ -194,7 +113,7 @@ export default function Transactions() {
       toast.success('Transação removida com sucesso!')
       setConfirmDelete(null)
       fetchData()
-    } catch (error) {
+    } catch (_error) {
       toast.error('Não foi possível excluir a transação.')
     }
   }
@@ -210,14 +129,14 @@ export default function Transactions() {
       toast.success('Conta marcada como paga!');
       setConfirmPay(null);
       fetchData();
-    } catch (error) {
+    } catch (_error) {
       toast.error('Erro ao registrar pagamento.');
     }
   }
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 pb-20 sm:pb-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-app-text tracking-tight">Transações</h1>
@@ -225,10 +144,9 @@ export default function Transactions() {
           </div>
           <button 
             onClick={handleOpenCreate}
-            className="flex items-center gap-2 bg-app-text text-app-bg px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg text-sm"
+            className="hidden lg:flex items-center gap-2 bg-app-text text-app-bg px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-app-text/10"
           >
-            <Plus className="w-4 h-4" />
-            Novo Lançamento
+            <Plus size={16} /> Novo Lançamento
           </button>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -284,7 +202,7 @@ export default function Transactions() {
             <div className="h-4 w-px bg-app-soft mx-1"></div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => { setStatusFilter(e.target.value as any); }}
               className="bg-app-card border border-app text-app-text text-xs font-bold px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-app-accent shadow-sm cursor-pointer hover:bg-app-soft transition-all"
             >
               <option value="all">Todos os Status</option>
@@ -453,8 +371,8 @@ export default function Transactions() {
                   
                   <div className="flex items-start justify-between">
                     <div className="space-y-1 pl-2">
-                      <p className="text-[10px] font-mono text-app-text-dim">{formatDate(tx.date)}</p>
-                      <h3 className="text-sm font-bold text-app-text leading-tight">{tx.description}</h3>
+                       <p className="text-[10px] font-mono text-app-text-dim">{formatDate(tx.date)}</p>
+                       <h3 className="text-sm font-bold text-app-text leading-tight">{tx.description}</h3>
                     </div>
                     <div className="text-right">
                       <p className={`text-sm font-black ${tx.type.toLowerCase() === 'income' ? 'text-app-income' : 'text-app-expense'}`}>
@@ -520,132 +438,21 @@ export default function Transactions() {
         </div>
       </div>
 
-      {/* Transaction Modal */}
-      {isDrawerOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-app-card border border-app w-full max-w-lg rounded-3xl shadow-2xl p-8 my-8 animate-in zoom-in-95 duration-200">
-            <h2 className="text-2xl font-bold text-app-text mb-6">
-              {editingTransaction ? 'Editar Lançamento' : 'Novo Lançamento'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-app-text-dim">Descrição</label>
-                <input required value={description} onChange={e => setDescription(e.target.value)}
-                  placeholder="Ex: Aluguel, Mercado, Freelance..."
-                  className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none"
-                />
-              </div>
+      {/* Floating Action Button (FAB) for Mobile Dashboard feel in Transactions too */}
+      <button
+        onClick={handleOpenCreate}
+        className="lg:hidden fixed bottom-8 right-6 w-16 h-16 bg-app-text text-app-bg rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-all z-50 border-4 border-app"
+        aria-label="Novo Lançamento"
+      >
+        <Plus size={32} />
+      </button>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-app-text-dim">Valor</label>
-                  <input 
-                    type="text" 
-                    inputMode="decimal"
-                    required 
-                    value={amount} 
-                    onChange={e => setAmount(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
-                    className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono"
-                  />
-                </div>
-                <div className="space-y-0">
-                  <DateInput 
-                    label="Data" 
-                    required 
-                    value={date} 
-                    onChange={setDate} 
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-app-text-dim">Tipo</label>
-                <div className="flex p-1 bg-app-soft rounded-xl gap-1 border border-app">
-                  <button type="button" onClick={() => setType('Expense')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${type === 'Expense' ? 'bg-rose-600 text-white shadow-lg' : 'text-app-text-dim hover:text-app-text'}`}>
-                    Despesa
-                  </button>
-                  <button type="button" onClick={() => setType('Income')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${type === 'Income' ? 'bg-emerald-600 text-white shadow-lg' : 'text-app-text-dim hover:text-app-text'}`}>
-                    Receita
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-app-text-dim">Conta</label>
-                  <select value={accountId} onChange={e => setAccountId(e.target.value)}
-                    className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-2.5 text-app-text focus:ring-2 focus:ring-app-accent outline-none text-sm">
-                    {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-app-text-dim">Categoria</label>
-                  <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
-                    className="w-full bg-app-bg border border-app transition-all duration-300 rounded-xl px-4 py-2.5 text-app-text focus:ring-2 focus:ring-app-accent outline-none text-sm">
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="p-4 bg-app-soft/50 border border-app rounded-2xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-sm font-bold text-app-text block">Despesa Fixa?</span>
-                    <span className="text-[10px] text-app-text-dim">Marque para controle de vencimento mensal</span>
-                  </div>
-                  <input type="checkbox" checked={isFixed} onChange={e => setIsFixed(e.target.checked)}
-                    className="w-5 h-5 accent-app-accent" />
-                </div>
-
-                {isFixed && (
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-app">
-                    <div className="space-y-0">
-                      <DateInput 
-                        label="Vencimento" 
-                        value={dueDate} 
-                        onChange={setDueDate} 
-                        className="py-2 px-3 text-xs"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-app-text-dim uppercase">Status</label>
-                      <select value={status} onChange={e => setStatus(e.target.value as any)}
-                        className="w-full bg-app-bg border border-app rounded-lg px-3 py-2 text-xs text-app-text outline-none focus:ring-1 focus:ring-app-accent">
-                        <option value="paid">Pago</option>
-                        <option value="pending">Pendente</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-                
-                {status === 'paid' && isFixed && (
-                   <div className="space-y-0">
-                      <DateInput 
-                        label="Data do Pagamento" 
-                        value={paymentDate} 
-                        onChange={setPaymentDate} 
-                        className="py-2 px-3 text-xs"
-                      />
-                   </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 pt-4">
-                <button type="button" onClick={() => setIsDrawerOpen(false)}
-                  className="flex-1 px-6 py-3 text-app-text-dim font-bold hover:text-app-text transition-colors">
-                  Cancelar
-                </button>
-                <button type="submit"
-                  className="flex-1 bg-app-text text-app-bg px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg text-sm">
-                  {editingTransaction ? 'Salvar Alterações' : 'Confirmar Lançamento'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <TransactionModal 
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSuccess={fetchData}
+        transaction={editingTransaction}
+      />
 
       <ConfirmDialog isOpen={!!confirmDelete} title="Excluir Transação"
         message="Deseja excluir permanentemente este lançamento? O valor será estornado do seu painel e relatórios."
@@ -657,13 +464,6 @@ export default function Transactions() {
         message={`Deseja marcar "${confirmPay?.description}" como pago hoje? Isso atualizará o status para "Pago" em seus controles.`}
         confirmLabel="Sim, Pago" variant="success" onConfirm={performPay}
         onClose={() => setConfirmPay(null)}
-      />
-
-      <ConfirmDialog isOpen={isConfirmSaveOpen} 
-        title={editingTransaction ? "Confirmar Edição" : "Confirmar Lançamento"}
-        message={editingTransaction ? "Deseja salvar as alterações feitas nesta transação?" : "Deseja registrar este novo lançamento no sistema?"}
-        confirmLabel="Confirmar" onConfirm={performSave}
-        onClose={() => setIsConfirmSaveOpen(false)}
       />
     </DashboardLayout>
   )

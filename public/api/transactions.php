@@ -18,20 +18,29 @@ if ($method === 'GET') {
     $orderInput = strtoupper($_GET['order'] ?? 'DESC');
 
     // Validação de segurança para ordenação (Whitelist)
-    $allowedSortFields = ['date', 'amount', 'description', 'type', 'categoryName', 'accountName'];
+    $allowedSortFields = ['date', 'amount', 'description', 'type', 'categoryName', 'accountName', 'createdAt'];
     $sortBy = in_array($sortByInput, $allowedSortFields) ? $sortByInput : 'date';
     $order = ($orderInput === 'ASC') ? 'ASC' : 'DESC';
 
-    // Se o campo de ordenação for de outra tabela, ajustamos o prefixo
-    $orderBy = "t.{$sortBy}";
-    if ($sortBy === 'accountName') $orderBy = "a.name";
-    if ($sortBy === 'categoryName') $orderBy = "c.name";
+    // Construção do ORDER BY
+    // Se ordenar por data, adicionamos createdAt como critério de desempate
+    // O {$order} final no final do SQL cuidará do critério principal e deste secundário
+    if ($sortBy === 'date') {
+        $orderBy = "t.date {$order}, t.createdAt";
+    } elseif ($sortBy === 'accountName') {
+        $orderBy = "a.name";
+    } elseif ($sortBy === 'categoryName') {
+        $orderBy = "c.name";
+    } else {
+        $orderBy = "t.{$sortBy}";
+    }
     
     $sql = "SELECT t.*, a.name as accountName, c.name as categoryName 
             FROM transactions t
             LEFT JOIN accounts a ON t.accountId = a.id
             LEFT JOIN categories c ON t.categoryId = c.id
             WHERE t.organizationId = ?";
+
     
     $params = [$organizationId];
     
