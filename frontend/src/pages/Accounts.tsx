@@ -8,15 +8,22 @@ import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
 import { DateFilter } from '../components/ui/DateFilter'
-import { formatDate } from '../lib/utils'
+import { formatDate, cn } from '../lib/utils'
 import { DateInput } from '../components/ui/DateInput'
 
 interface Account {
   id: string
   name: string
-  type: 'CHECKING' | 'SAVINGS' | 'INVESTMENT' | 'CASH'
+  type: string
   balance: number
+  color: string
 }
+
+const ACCOUNT_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+  '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', 
+  '#14b8a6', '#6366f1', '#d946ef', '#84cc16'
+];
 
 interface Category {
   id: string
@@ -48,6 +55,7 @@ export default function Accounts() {
   const [name, setName] = useState('')
   const [type, setType] = useState('')
   const [balance, setBalance] = useState('0')
+  const [selectedColor, setSelectedColor] = useState(ACCOUNT_COLORS[0])
 
   // Income Entry State
   const [isIncomeDrawerOpen, setIsIncomeDrawerOpen] = useState(false)
@@ -128,6 +136,7 @@ export default function Accounts() {
     setName('')
     setType(accountTypes.length > 0 ? accountTypes[0].id : '')
     setBalance('0,00')
+    setSelectedColor(ACCOUNT_COLORS[Math.floor(Math.random() * ACCOUNT_COLORS.length)])
     setIsDrawerOpen(true)
   }
 
@@ -136,6 +145,7 @@ export default function Accounts() {
     setName(account.name)
     setType(account.type)
     setBalance(account.balance.toFixed(2).replace('.', ','))
+    setSelectedColor(account.color || ACCOUNT_COLORS[0])
     setIsDrawerOpen(true)
   }
 
@@ -228,6 +238,7 @@ export default function Accounts() {
         name,
         type,
         balance: parseFloat(cleanBalance),
+        color: selectedColor,
         organizationId: organization.organizationId
       }
 
@@ -326,7 +337,7 @@ export default function Accounts() {
               return (
                 <div key={account.id} className="group bg-app-card border border-app p-6 rounded-3xl hover:border-app-accent/30 transition-all duration-300 shadow-sm hover:shadow-xl">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="p-3 bg-app-soft rounded-2xl text-app-accent">
+                    <div className="p-3 rounded-2xl text-white" style={{ backgroundColor: account.color || '#3b82f6' }}>
                       <Landmark className="w-6 h-6" />
                     </div>
                     <div className="flex items-center gap-1">
@@ -645,6 +656,24 @@ export default function Accounts() {
                   onChange={e => setBalance(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
                   className="w-full bg-app-bg border border-app rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-app-text-dim">Cor da Conta</label>
+                <div className="grid grid-cols-6 gap-2 pt-1">
+                  {ACCOUNT_COLORS.map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setSelectedColor(c)}
+                      className={cn(
+                        "w-full aspect-square rounded-full border-4 transition-all",
+                        selectedColor === c ? "border-white scale-110 shadow-lg" : "border-transparent opacity-60 hover:opacity-100"
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center gap-3 pt-4">

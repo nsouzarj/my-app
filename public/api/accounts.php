@@ -21,14 +21,15 @@ if ($method === 'POST') {
     $data = getJsonInput();
     $id = bin2hex(random_bytes(16));
     
-    $stmt = $pdo->prepare("INSERT INTO accounts (id, name, type, balance, organizationId, createdAt, updatedAt) 
-                           VALUES (:id, :name, :type, :balance, :organizationId, NOW(), NOW())");
+    $stmt = $pdo->prepare("INSERT INTO accounts (id, name, type, balance, color, organizationId, createdAt, updatedAt) 
+                           VALUES (:id, :name, :type, :balance, :color, :organizationId, NOW(), NOW())");
     
     $stmt->execute([
         ':id' => $id,
         ':name' => $data['name'],
         ':type' => $data['type'],
         ':balance' => $data['balance'],
+        ':color' => $data['color'] ?? '#3b82f6',
         ':organizationId' => $data['organizationId']
     ]);
 
@@ -85,10 +86,11 @@ if ($method === 'PUT') {
         ]);
     }
     
-    $stmt = $pdo->prepare("UPDATE accounts SET name = :name, type = :type, updatedAt = NOW() WHERE id = :id AND organizationId = :organizationId");
+    $stmt = $pdo->prepare("UPDATE accounts SET name = :name, type = :type, color = :color, updatedAt = NOW() WHERE id = :id AND organizationId = :organizationId");
     $stmt->execute([
         ':name' => $data['name'],
         ':type' => $data['type'],
+        ':color' => $data['color'] ?? '#3b82f6',
         ':id' => $id,
         ':organizationId' => $data['organizationId']
     ]);

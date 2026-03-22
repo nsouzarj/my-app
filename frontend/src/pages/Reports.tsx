@@ -78,26 +78,33 @@ export default function Reports() {
 
         {/* Financial Summary Cards (Printable) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-app-card border border-app rounded-2xl p-6 print:border-gray-200">
-            <span className="text-xs font-bold text-app-text-dim uppercase tracking-wider">Receitas</span>
-            <p className="text-2xl font-black text-app-income mt-1">
+          <div className="bg-emerald-600 border border-emerald-500 rounded-3xl p-6 shadow-lg transition-all hover:scale-[1.02]">
+            <span className="text-xs font-black text-white/80 uppercase tracking-widest">Receitas Total</span>
+            <p className="text-3xl font-black text-white mt-1">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(reportData?.income || 0)}
             </p>
+            <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider mt-1">Status: Confirmado</span>
           </div>
-          <div className="bg-app-card border border-app rounded-2xl p-6 print:border-gray-200">
-            <span className="text-xs font-bold text-app-text-dim uppercase tracking-wider">Despesas</span>
-            <p className="text-2xl font-black text-app-expense mt-1">
+          <div className="bg-rose-600 border border-rose-500 rounded-3xl p-6 shadow-lg transition-all hover:scale-[1.02]">
+            <span className="text-xs font-black text-white/80 uppercase tracking-widest">Despesas Total</span>
+            <p className="text-3xl font-black text-white mt-1">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(reportData?.expenses || 0)}
             </p>
+            <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider mt-1">Status: Confirmado</span>
           </div>
-          <div className="bg-app-card border border-app rounded-2xl p-6 print:border-gray-200">
-            <span className="text-xs font-bold text-app-text-dim uppercase tracking-wider">Resultado</span>
-            <p className={cn(
-              "text-2xl font-black mt-1",
-              (reportData?.income - reportData?.expenses) >= 0 ? "text-app-income" : "text-app-expense"
-            )}>
+          <div className={cn(
+            "border rounded-3xl p-6 shadow-lg transition-all hover:scale-[1.02]",
+            (reportData?.income - reportData?.expenses) >= 0 
+              ? "bg-sky-600 border-sky-500" 
+              : "bg-amber-600 border-amber-500"
+          )}>
+            <span className="text-xs font-black text-white/80 uppercase tracking-widest">Resultado Líquido</span>
+            <p className="text-3xl font-black text-white mt-1">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', signDisplay: 'always' }).format(reportData?.income - reportData?.expenses)}
             </p>
+            <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider mt-1">
+              Status: {(reportData?.income - reportData?.expenses) >= 0 ? 'Positivo' : 'Negativo'}
+            </span>
           </div>
         </div>
 
@@ -161,8 +168,8 @@ export default function Reports() {
                        formatter={(v: any) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v))}
                     />
                     <Bar dataKey="balance" radius={[6, 6, 0, 0]}>
-                      {reportData?.accounts?.map((_entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? 'var(--color-app-accent)' : '#a8a29e'} />
+                      {reportData?.accounts?.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} />
                       ))}
                     </Bar>
                   </BarChart>

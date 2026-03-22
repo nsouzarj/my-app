@@ -49,10 +49,33 @@ export default function Dashboard() {
     if (organization) fetchDashboard();
   }, [organization, filterMonth]);
 
+  const monthlyBalance = (summary?.income || 0) - (summary?.expenses || 0);
+
   const cards = [
-    { name: 'Receitas', value: summary?.income || 0, icon: TrendingUp, color: 'text-emerald-400' },
-    { name: 'Despesas', value: summary?.expenses || 0, icon: TrendingDown, color: 'text-rose-400' },
-    { name: 'Saldo do Mês', value: (summary?.income || 0) - (summary?.expenses || 0), icon: Wallet, color: 'text-app-text' },
+    { 
+      name: 'Receitas', 
+      value: summary?.income || 0, 
+      icon: TrendingUp, 
+      color: 'text-emerald-100',
+      bgColor: 'bg-emerald-600',
+      borderColor: 'border-emerald-500'
+    },
+    { 
+      name: 'Despesas', 
+      value: summary?.expenses || 0, 
+      icon: TrendingDown, 
+      color: 'text-rose-100',
+      bgColor: 'bg-rose-600',
+      borderColor: 'border-rose-500'
+    },
+    { 
+      name: 'Saldo do Mês', 
+      value: monthlyBalance, 
+      icon: Wallet, 
+      color: monthlyBalance >= 0 ? 'text-sky-100' : 'text-amber-100',
+      bgColor: monthlyBalance >= 0 ? 'bg-sky-600' : 'bg-amber-600',
+      borderColor: monthlyBalance >= 0 ? 'border-sky-500' : 'border-amber-500'
+    },
   ];
 
   if (isLoading) {
@@ -123,16 +146,25 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {cards.map((card) => (
-            <div key={card.name} className="bg-app-card border border-app p-6 rounded-2xl shadow-sm hover:border-app-accent/30 transition-all duration-300 group">
+            <div 
+              key={card.name} 
+              className={cn(
+                "p-6 rounded-3xl border shadow-lg transition-all duration-300 group hover:scale-[1.02]",
+                card.bgColor,
+                card.borderColor
+              )}
+            >
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium text-app-text-dim">{card.name}</span>
-                <card.icon className={`w-5 h-5 ${card.color}`} />
+                <span className="text-xs font-black text-white/80 uppercase tracking-widest">{card.name}</span>
+                <div className={cn("p-2 rounded-xl bg-white/20", card.color)}>
+                  <card.icon size={20} />
+                </div>
               </div>
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-app-text">
+                <span className="text-3xl font-black text-white tracking-tight">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(card.value)}
                 </span>
-                <span className="text-xs text-app-text-dim mt-1">Este mês</span>
+                <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider mt-1">Status: {card.name === 'Saldo do Mês' ? (card.value >= 0 ? 'Positivo' : 'Negativo') : 'Confirmado'}</span>
               </div>
             </div>
           ))}
@@ -358,9 +390,9 @@ export default function Dashboard() {
                 ) : (
                   summary.accounts.map((acc: any) => {
                     return (
-                      <div key={acc.id} className="flex items-center justify-between p-3 bg-app-soft/20 border border-app rounded-xl">
+                      <div key={acc.id} className="flex items-center justify-between p-3 bg-app-soft/20 border border-app rounded-xl group hover:border-app-accent/30 transition-all">
                         <div className="flex items-center gap-4">
-                          <div className="p-2 bg-app-soft rounded-lg text-app-text-dim">
+                          <div className="p-2 rounded-lg text-white shadow-sm" style={{ backgroundColor: acc.color || '#3b82f6' }}>
                             <Landmark size={18} />
                           </div>
                           <div>
