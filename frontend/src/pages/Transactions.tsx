@@ -144,7 +144,7 @@ export default function Transactions() {
           </div>
           <button 
             onClick={handleOpenCreate}
-            className="hidden lg:flex items-center gap-2 bg-app-text text-app-bg px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-app-text/10"
+            className="hidden lg:flex items-center gap-2 bg-app-text text-app-bg px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg text-sm"
           >
             <Plus size={16} /> Novo Lançamento
           </button>
