@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Pencil, Trash2, Wallet, Landmark, DollarSign, FileText, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, Wallet, Landmark, DollarSign, FileText, ArrowUp, ArrowDown, ArrowRightLeft } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
@@ -16,7 +16,10 @@ interface Account {
   name: string
   type: string
   balance: number
-  color: string
+  color?: string
+  creditLimit?: number
+  closingDay?: number
+  dueDay?: number
 }
 
 const ACCOUNT_COLORS = [
@@ -51,11 +54,15 @@ export default function Accounts() {
   
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   
-  // Account Form State
   const [name, setName] = useState('')
   const [type, setType] = useState('')
   const [balance, setBalance] = useState('0')
   const [selectedColor, setSelectedColor] = useState(ACCOUNT_COLORS[0])
+  
+  // Credit Card specific fields
+  const [creditLimit, setCreditLimit] = useState('')
+  const [closingDay, setClosingDay] = useState('')
+  const [dueDay, setDueDay] = useState('')
 
   // Income Entry State
   const [isIncomeDrawerOpen, setIsIncomeDrawerOpen] = useState(false)
@@ -76,6 +83,14 @@ export default function Accounts() {
   // Confirm State
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false)
+
+  // Transfer State
+  const [isTransferDrawerOpen, setIsTransferDrawerOpen] = useState(false)
+  const [transferOriginId, setTransferOriginId] = useState('')
+  const [transferDestinationId, setTransferDestinationId] = useState('')
+  const [transferAmount, setTransferAmount] = useState('')
+  const [transferDate, setTransferDate] = useState(new Date().toISOString().split('T')[0])
+  const [transferDesc, setTransferDesc] = useState('Transferência')
 
   useEffect(() => {
     if (organization) {
@@ -137,6 +152,9 @@ export default function Accounts() {
     setType(accountTypes.length > 0 ? accountTypes[0].id : '')
     setBalance('0,00')
     setSelectedColor(ACCOUNT_COLORS[Math.floor(Math.random() * ACCOUNT_COLORS.length)])
+    setCreditLimit('')
+    setClosingDay('')
+    setDueDay('')
     setIsDrawerOpen(true)
   }
 
@@ -144,8 +162,11 @@ export default function Accounts() {
     setEditingAccount(account)
     setName(account.name)
     setType(account.type)
-    setBalance(account.balance.toFixed(2).replace('.', ','))
+    setBalance(Number(account.balance).toFixed(2).replace('.', ','))
     setSelectedColor(account.color || ACCOUNT_COLORS[0])
+    setCreditLimit(account.creditLimit ? Number(account.creditLimit).toFixed(2).replace('.', ',') : '')
+    setClosingDay(account.closingDay ? account.closingDay.toString() : '')
+    setDueDay(account.dueDay ? account.dueDay.toString() : '')
     setIsDrawerOpen(true)
   }
 
@@ -225,6 +246,45 @@ export default function Accounts() {
     }
   }
 
+  async function handleTransferSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!transferOriginId || !transferDestinationId || transferOriginId === transferDestinationId || !transferAmount) {
+      toast.error('Verifique as contas e insira um valor válido.')
+      return
+    }
+
+    const cleanAmount = transferAmount.replace(/\./g, '').replace(',', '.')
+    const normalizedAmount = parseFloat(cleanAmount)
+
+    if (isNaN(normalizedAmount) || normalizedAmount <= 0) {
+      toast.error('Valor inválido.')
+      return
+    }
+
+    try {
+      await apiService.post('transfers', {
+        amount: normalizedAmount,
+        description: transferDesc,
+        date: transferDate,
+        originAccountId: transferOriginId,
+        destinationAccountId: transferDestinationId,
+        organizationId: organization.organizationId
+      })
+      
+      toast.success('Transferência realizada!')
+      setIsTransferDrawerOpen(false)
+      
+      // Reset transfer form
+      setTransferAmount('')
+      setTransferOriginId('')
+      setTransferDestinationId('')
+      
+      fetchAccounts() // Atualiza os saldos
+    } catch (error) {
+      toast.error('Erro ao realizar transferência.')
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setIsConfirmSaveOpen(true)
@@ -233,12 +293,16 @@ export default function Accounts() {
   async function performSave() {
     setIsConfirmSaveOpen(false)
     try {
-      const cleanBalance = balance.replace(/\./g, '').replace(',', '.')
+      const cleanBalance = String(balance).replace(/\./g, '').replace(',', '.')
+      const cleanLimit = String(creditLimit).replace(/\./g, '').replace(',', '.')
       const payload = {
         name,
         type,
         balance: parseFloat(cleanBalance),
         color: selectedColor,
+        creditLimit: cleanLimit ? parseFloat(cleanLimit) : null,
+        closingDay: closingDay ? parseInt(closingDay) : null,
+        dueDay: dueDay ? parseInt(dueDay) : null,
         organizationId: organization.organizationId
       }
 
@@ -311,13 +375,22 @@ export default function Accounts() {
             <h1 className="text-3xl font-bold text-app-text tracking-tight">Contas</h1>
             <p className="text-app-text-dim mt-1">Gerencie seu "Balancão": Lançamentos de entrada e saldos reais.</p>
           </div>
-          <button 
-            onClick={handleOpenCreate}
-            className="flex items-center gap-2 bg-app-text text-app-bg px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Nova Conta
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setIsTransferDrawerOpen(true)}
+              className="flex items-center gap-2 bg-app-accent/10 border border-app-accent/20 text-app-accent px-5 py-2.5 rounded-xl font-bold hover:bg-app-accent hover:text-app-bg transition-all shadow-lg text-sm"
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+              Transferir
+            </button>
+            <button 
+              onClick={handleOpenCreate}
+              className="flex items-center gap-2 bg-app-text text-app-bg px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Nova Conta
+            </button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -355,8 +428,13 @@ export default function Accounts() {
                       </button>
                     </div>
                   </div>
-                  <div className="mb-4">
+                  <div className="mb-4 flex items-center gap-2">
                      <span className="text-[10px] font-bold text-app-text-dim uppercase tracking-wider">{typeName}</span>
+                     {account.creditLimit ? (
+                       <span className="px-2 py-0.5 bg-app-accent/10 border border-app-accent/20 text-app-accent rounded-full text-[10px] font-bold uppercase tracking-wider">
+                         Lim: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(account.creditLimit)}
+                       </span>
+                     ) : null}
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-app-text mb-1">{account.name}</h3>
@@ -604,10 +682,109 @@ export default function Accounts() {
         </div>
       )}
 
+      {/* Transfer Modal */}
+      {isTransferDrawerOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-app-card border border-app w-full max-w-md rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-app-accent/20 text-app-accent rounded-lg border border-app-accent/30">
+                <ArrowRightLeft className="w-5 h-5" />
+              </div>
+              <h2 className="text-xl font-bold text-app-text">
+                Transferência
+              </h2>
+            </div>
+
+            <form onSubmit={handleTransferSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-app-text-dim">Conta de Origem (Saída)</label>
+                <select 
+                  required
+                  value={transferOriginId}
+                  onChange={e => setTransferOriginId(e.target.value)}
+                  className="w-full bg-app-bg border border-app rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none appearance-none"
+                >
+                  <option value="">Selecione...</option>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name} (Saldo: R$ {acc.balance.toFixed(2).replace('.',',')})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-app-text-dim">Conta de Destino (Entrada)</label>
+                <select 
+                  required
+                  value={transferDestinationId}
+                  onChange={e => setTransferDestinationId(e.target.value)}
+                  className="w-full bg-app-bg border border-app rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none appearance-none"
+                >
+                  <option value="">Selecione...</option>
+                  {accounts.filter(a => a.id !== transferOriginId).map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-app-text-dim">Valor a Transferir</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
+                  <input 
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    value={transferAmount}
+                    onChange={e => setTransferAmount(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
+                    placeholder="100,00"
+                    className="w-full bg-app-bg border border-app rounded-xl pl-12 pr-4 py-4 text-app-text text-xl font-black focus:ring-2 focus:ring-app-accent outline-none shadow-inner"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-0">
+                <DateInput 
+                  label="Data da Transferência" 
+                  required 
+                  value={transferDate} 
+                  onChange={setTransferDate} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-app-text-dim">Descrição Opcional</label>
+                <input 
+                  value={transferDesc}
+                  onChange={e => setTransferDesc(e.target.value)}
+                  placeholder="Ex: Pagamento fatura, Empréstimo..."
+                  className="w-full bg-app-bg border border-app rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-medium"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsTransferDrawerOpen(false)}
+                  className="flex-1 px-6 py-4 text-app-text-dim font-bold hover:text-app-text transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-app-accent text-app-bg px-6 py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-lg"
+                >
+                  Transferir
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Account Drawer/Modal */}
       {isDrawerOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-app-card border border-app w-full max-w-md rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+          <div className="bg-app-card border border-app w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
             <h2 className="text-2xl font-bold text-app-text mb-6">
               {editingAccount ? 'Editar Conta' : 'Nova Conta'}
             </h2>
@@ -645,6 +822,45 @@ export default function Accounts() {
                   ))}
                 </select>
               </div>
+
+              {/* Conditional Credit Card Fields */}
+              {(accountTypes.find(t => t.id === type)?.name.toLowerCase().includes('cartão') || type === 'CREDIT_CARD') && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-l-2 border-app-accent pl-4 py-2 opacity-90">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-app-text-dim">Limite</label>
+                    <input 
+                      type="text"
+                      inputMode="decimal"
+                      value={creditLimit}
+                      onChange={e => setCreditLimit(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
+                      placeholder="5.000,00"
+                      className="w-full bg-app-bg border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:ring-2 focus:ring-app-accent outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-app-text-dim">Dia Fechamento</label>
+                    <input 
+                      type="number"
+                      min="1" max="31"
+                      value={closingDay}
+                      onChange={e => setClosingDay(e.target.value)}
+                      placeholder="Ex: 5"
+                      className="w-full bg-app-bg border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:ring-2 focus:ring-app-accent outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-app-text-dim">Dia Vencimento</label>
+                    <input 
+                      type="number"
+                      min="1" max="31"
+                      value={dueDay}
+                      onChange={e => setDueDay(e.target.value)}
+                      placeholder="Ex: 15"
+                      className="w-full bg-app-bg border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:ring-2 focus:ring-app-accent outline-none"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-app-text-dim">Saldo Inicial (Manual)</label>
@@ -699,7 +915,7 @@ export default function Accounts() {
       {/* Manage Types Drawer */}
       {isManageTypesOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-app-card border border-app w-full max-w-sm rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+          <div className="bg-app-card border border-app w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-bold text-app-text mb-4">Gerenciar Tipos de Conta</h2>
             
             <div className="flex gap-2 mb-6">
@@ -725,7 +941,7 @@ export default function Accounts() {
                   <span className="text-sm font-medium text-app-text">{t.name}</span>
                   <div className="flex gap-1">
                     <button type="button" onClick={() => { setEditingTypeId(t.id); setNewTypeName(t.name); }} className="p-1.5 text-app-text-dim hover:text-app-text"><Pencil className="w-3.5 h-3.5" /></button>
-                    {!['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH'].includes(t.id) && (
+                    {!['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'CREDIT_CARD'].includes(t.id) && (
                       <button type="button" onClick={() => handleDeleteType(t.id)} className="p-1.5 text-app-text-dim hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
                   </div>

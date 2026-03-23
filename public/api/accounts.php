@@ -21,8 +21,8 @@ if ($method === 'POST') {
     $data = getJsonInput();
     $id = bin2hex(random_bytes(16));
     
-    $stmt = $pdo->prepare("INSERT INTO accounts (id, name, type, balance, color, organizationId, createdAt, updatedAt) 
-                           VALUES (:id, :name, :type, :balance, :color, :organizationId, NOW(), NOW())");
+    $stmt = $pdo->prepare("INSERT INTO accounts (id, name, type, balance, color, organizationId, creditLimit, closingDay, dueDay, createdAt, updatedAt) 
+                           VALUES (:id, :name, :type, :balance, :color, :organizationId, :creditLimit, :closingDay, :dueDay, NOW(), NOW())");
     
     $stmt->execute([
         ':id' => $id,
@@ -30,7 +30,10 @@ if ($method === 'POST') {
         ':type' => $data['type'],
         ':balance' => $data['balance'],
         ':color' => $data['color'] ?? '#3b82f6',
-        ':organizationId' => $data['organizationId']
+        ':organizationId' => $data['organizationId'],
+        ':creditLimit' => isset($data['creditLimit']) ? (float)$data['creditLimit'] : null,
+        ':closingDay' => isset($data['closingDay']) ? (int)$data['closingDay'] : null,
+        ':dueDay' => isset($data['dueDay']) ? (int)$data['dueDay'] : null
     ]);
 
     // Se o saldo inicial for > 0, cria uma transação automática de "Saldo Inicial"
@@ -86,11 +89,14 @@ if ($method === 'PUT') {
         ]);
     }
     
-    $stmt = $pdo->prepare("UPDATE accounts SET name = :name, type = :type, color = :color, updatedAt = NOW() WHERE id = :id AND organizationId = :organizationId");
+    $stmt = $pdo->prepare("UPDATE accounts SET name = :name, type = :type, color = :color, creditLimit = :creditLimit, closingDay = :closingDay, dueDay = :dueDay, updatedAt = NOW() WHERE id = :id AND organizationId = :organizationId");
     $stmt->execute([
         ':name' => $data['name'],
         ':type' => $data['type'],
         ':color' => $data['color'] ?? '#3b82f6',
+        ':creditLimit' => isset($data['creditLimit']) ? (float)$data['creditLimit'] : null,
+        ':closingDay' => isset($data['closingDay']) ? (int)$data['closingDay'] : null,
+        ':dueDay' => isset($data['dueDay']) ? (int)$data['dueDay'] : null,
         ':id' => $id,
         ':organizationId' => $data['organizationId']
     ]);

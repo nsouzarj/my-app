@@ -13,6 +13,7 @@ export class PrismaAccountRepository implements IAccountRepository {
         return accounts.map(a => ({
             ...a,
             balance: Number(a.balance),
+            creditLimit: a.creditLimit ? Number(a.creditLimit) : null,
             type: a.type as Account['type']
         }));
     }
@@ -27,6 +28,7 @@ export class PrismaAccountRepository implements IAccountRepository {
         return {
             ...account,
             balance: Number(account.balance),
+            creditLimit: account.creditLimit ? Number(account.creditLimit) : null,
             type: account.type as Account['type']
         };
     }
@@ -42,6 +44,7 @@ export class PrismaAccountRepository implements IAccountRepository {
         return {
             ...account,
             balance: Number(account.balance),
+            creditLimit: account.creditLimit ? Number(account.creditLimit) : null,
             type: account.type as Account['type']
         };
     }
@@ -62,6 +65,7 @@ export class PrismaAccountRepository implements IAccountRepository {
         return {
             ...updated,
             balance: Number(updated.balance),
+            creditLimit: updated.creditLimit ? Number(updated.creditLimit) : null,
             type: updated.type as Account['type']
         };
     }

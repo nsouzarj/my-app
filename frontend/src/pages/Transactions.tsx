@@ -40,12 +40,14 @@ export default function Transactions() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   
   // Filters & Sorting State
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>(initialStatus)
   const [categoryIdFilter, setCategoryIdFilter] = useState('all')
+  const [accountIdFilter, setAccountIdFilter] = useState('all')
+  const [accounts, setAccounts] = useState<any[]>([])
 
   // Confirm State
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -55,29 +57,34 @@ export default function Transactions() {
     if (organization) {
       fetchData()
     }
-  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter, categoryIdFilter])
+  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter, categoryIdFilter, accountIdFilter])
 
   async function fetchData() {
     try {
       setIsLoading(true)
       const params: any = { 
         organizationId: organization.organizationId,
-        startDate: statusFilter === 'pending' ? '2000-01-01' : format(startOfMonth(selectedDate), 'yyyy-MM-dd'),
-        endDate: statusFilter === 'pending' ? '2100-12-31' : format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
+        startDate: (statusFilter === 'pending' || !selectedDate) ? '2000-01-01' : format(startOfMonth(selectedDate), 'yyyy-MM-dd'),
+        endDate: (statusFilter === 'pending' || !selectedDate) ? '2100-12-31' : format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
         sortBy,
         order: sortOrder,
         type: typeFilter,
         statusFilter: statusFilter,
         categoryId: categoryIdFilter
       }
+      if (accountIdFilter !== 'all') {
+        params.accountId = accountIdFilter;
+      }
       
-      const [t, c] = await Promise.all([
+      const [t, c, a] = await Promise.all([
         apiService.get('transactions', params),
-        apiService.get('categories', { organizationId: organization.organizationId })
+        apiService.get('categories', { organizationId: organization.organizationId }),
+        apiService.get('accounts', { organizationId: organization.organizationId })
       ])
       
       setTransactions(t)
       setCategories(c)
+      setAccounts(a)
     } catch (_error) {
       toast.error('Erro ao carregar dados.')
     } finally {
@@ -189,6 +196,17 @@ export default function Transactions() {
           </div>
 
           <div className="flex items-center gap-2">
+            <select
+              value={accountIdFilter}
+              onChange={(e) => setAccountIdFilter(e.target.value)}
+              className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all max-w-[140px] truncate"
+            >
+              <option value="all">Todas Contas</option>
+              {accounts.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+            <div className="h-4 w-px bg-app-soft mx-1"></div>
             <select
               value={categoryIdFilter}
               onChange={(e) => setCategoryIdFilter(e.target.value)}

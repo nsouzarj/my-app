@@ -95,24 +95,87 @@ if ($method === 'POST') {
     // Usamos abs() para garantir que o valor salvo seja positivo, o 'type' decide o impacto
     $amountInput = abs((float)str_replace(',', '.', $data['amount']));
     
-    // Inserir transação
-    $stmt = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, categoryId, organizationId, due_date, payment_date, status, is_fixed, createdAt, updatedAt) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
+    $totalInstallments = isset($data['totalInstallments']) ? (int)$data['totalInstallments'] : 1;
     
-    $stmt->execute([
-        $id,
-        $amountInput,
-        $data['description'],
-        $data['date'],
-        strtolower($data['type']), // Garante 'income' ou 'expense' sempre minúsculo
-        $data['accountId'],
-        $data['categoryId'],
-        $data['organizationId'],
-        $data['due_date'] ?? null,
-        $data['payment_date'] ?? null,
-        $data['status'] ?? 'paid',
-        $data['is_fixed'] ?? 0
-    ]);
+    if ($totalInstallments > 1) {
+        $parentTransactionId = $id;
+        $installmentAmount = round($amountInput / $totalInstallments, 2);
+        
+        $stmt = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, categoryId, organizationId, due_date, payment_date, status, is_fixed, parentTransactionId, installmentNumber, totalInstallments, createdAt, updatedAt) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
+                               
+        $baseDate = isset($data['firstInstallmentDate']) ? $data['firstInstallmentDate'] : $data['date'];
+        
+        // Determinar se é cartão de crédito para cálculo inteligente
+        $stmtAcc = $pdo->prepare("SELECT type, closingDay, dueDay FROM accounts WHERE id = ?");
+        $stmtAcc->execute([$data['accountId']]);
+        $account = $stmtAcc->fetch();
+        $isCreditCard = ($account && strtoupper($account['type']) === 'CREDIT_CARD' && $account['closingDay'] && $account['dueDay']);
+        
+        for ($i = 1; $i <= $totalInstallments; $i++) {
+            $childId = ($i === 1) ? $id : bin2hex(random_bytes(16)); // keeps main ID for response but generates others
+            
+            if ($isCreditCard) {
+                $purchaseDate = new DateTime($data['date']); // Compra original
+                $day = (int)$purchaseDate->format('j');
+                $billMonth = (int)$purchaseDate->format('n');
+                $billYear = (int)$purchaseDate->format('Y');
+                
+                // Se passou do dia de fechamento, cai na fatura do mês seguinte
+                if ($day > (int)$account['closingDay']) {
+                    $billMonth++;
+                }
+                
+                // Avança meses correspondentes à parcela atual
+                $currentMonth = $billMonth + ($i - 1);
+                $currentYear = $billYear + (int)floor(($currentMonth - 1) / 12);
+                $currentMonth = (($currentMonth - 1) % 12) + 1;
+                
+                $installmentDate = sprintf('%04d-%02d-%02d', $currentYear, $currentMonth, (int)$account['dueDay']);
+            } else {
+                // Instalações normais
+                $dateObj = new DateTime($baseDate);
+                $dateObj->modify('+' . ($i - 1) . ' month');
+                $installmentDate = $dateObj->format('Y-m-d');
+            }
+            
+            $stmt->execute([
+                $childId,
+                $installmentAmount,
+                $data['description'] . " (" . $i . "/" . $totalInstallments . ")",
+                $installmentDate,
+                strtolower($data['type']),
+                $data['accountId'],
+                $data['categoryId'],
+                $data['organizationId'],
+                $data['due_date'] ?? null,
+                $data['payment_date'] ?? null,
+                $data['status'] ?? 'paid',
+                $data['is_fixed'] ?? 0,
+                $parentTransactionId,
+                $i,
+                $totalInstallments
+            ]);
+        }
+    } else {
+        $stmt = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, categoryId, organizationId, due_date, payment_date, status, is_fixed, createdAt, updatedAt) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
+        
+        $stmt->execute([
+            $id,
+            $amountInput,
+            $data['description'],
+            $data['date'],
+            strtolower($data['type']),
+            $data['accountId'],
+            $data['categoryId'],
+            $data['organizationId'],
+            $data['due_date'] ?? null,
+            $data['payment_date'] ?? null,
+            $data['status'] ?? 'paid',
+            $data['is_fixed'] ?? 0
+        ]);
+    }
 
     // Recalcular Saldo da Conta (Sempre do zero para evitar drift)
     if (!empty($data['accountId'])) {

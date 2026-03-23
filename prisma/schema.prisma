@@ -10,6 +10,9 @@ datasource db {
 model User {
   id                  String               @id @default(uuid())
   email               String               @unique
+  password            String?
+  reset_token         String?
+  reset_expiry        DateTime?
   fullName            String?
   phone               String?              // New field for phone number
   createdAt           DateTime             @default(now())
@@ -29,6 +32,7 @@ model Organization {
   members   OrganizationMember[]
   accounts  Account[]
   categories Category[]
+  accountTypes AccountType[]
   transactions Transaction[]
 
   @@map("organizations")
@@ -50,7 +54,11 @@ model Account {
   id             String       @id @default(uuid())
   organizationId String
   name           String
-  type           String       // "Checking" | "Savings" | "Credit Card"
+  type           String       // "Checking" | "Savings" | "Credit Card" | "Investment"
+  color          String?
+  creditLimit    Decimal?     @db.Decimal(10, 2)
+  closingDay     Int?
+  dueDay         Int?
   balance        Decimal      @default(0) @db.Decimal(10, 2)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -65,6 +73,7 @@ model Category {
   id             String       @id @default(uuid())
   organizationId String
   name           String
+  type           String       @default("Expense")
   color          String?
   icon           String?
   createdAt      DateTime     @default(now())
@@ -84,7 +93,15 @@ model Transaction {
   amount         Decimal      @db.Decimal(10, 2)
   description    String
   date           DateTime
-  type           String       // "Income" | "Expense"
+  type                String       // "Income" | "Expense" | "Transfer In" | "Transfer Out"
+  parentTransactionId String?
+  installmentNumber   Int?
+  totalInstallments   Int?
+  transferReferenceId String?
+  status              String       @default("paid")
+  due_date            DateTime?
+  payment_date        DateTime?
+  is_fixed            Boolean      @default(false)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   
@@ -95,5 +112,22 @@ model Transaction {
   @@index([organizationId])
   @@index([accountId])
   @@index([categoryId])
+  @@index([organizationId, date, type])
+  @@index([organizationId, type, status])
+  @@index([organizationId, accountId, date])
   @@map("transactions")
+}
+
+model AccountType {
+  id             String
+  name           String
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([id, organizationId])
+  @@index([organizationId])
+  @@map("account_types")
 }

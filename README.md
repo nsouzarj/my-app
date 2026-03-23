@@ -1,12 +1,15 @@
 # Sistema de Gestão Financeira Premium (Vite + PHP)
 
-Um sistema SaaS de gerenciamento financeiro moderno, rápido e altamente personalizável, construído com React 19 e PHP 8.
+Um sistema SaaS de gerenciamento financeiro moderno, rápido e altamente personalizável, construído com **React 19** e **PHP 8**. 
+Desenvolvido com um foco implacável em UX/UI, este projeto utiliza as abordagens mais sofisticadas de design responsivo, animações micro-interativas e tratamento inteligente no Backend para operações massivas como faturas de cartão de crédito.
 
 ## 🚀 Tecnologias
 
 - **Frontend**: React 19, Vite, Tailwind CSS 4, React Router 7.
-- **Backend**: PHP 8.1+, MySQL.
-- **UI/UX**: Lucide Icons, Recharts, Animações Framer Motion.
+- **Backend**: PHP 8.1+, MySQL (PDO Nativo).
+- **ORM & Types**: Prisma Client (Apenas para documentação de schema, **NÃO** usado em runtime de query do Backend).
+- **UI/UX**: Lucide Icons, Recharts, Framer Motion, e padrões profundos de _Glassmorphism_ em modo Dark de baixo contraste.
+- **Segurança**: Autenticação Proprietária `PASSWORD_ARGON2ID` no PHP com tokens rotativos e cookies de Sessão.
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -23,9 +26,9 @@ graph TD
     
     subgraph "Backend (PHP 8.x + MySQL)"
         API[Endpoints PHP - public/api]
-        AuthServ[Serviço de Autenticação]
+        AuthServ[Serviço de Autenticação / JWT]
         Mailer[Serviço de E-mail - SMTP Direto]
-        TransServ[Serviço de Transações]
+        TransServ[Serviço de Transações e Inteligência de Fatura]
         DB[(Banco de Dados - MySQL)]
     end
     
@@ -41,62 +44,20 @@ graph TD
 ```
 
 ## 📊 Modelo de Dados
+O mapeamento oficial das estruturas está definido no arquivo `prisma/schema.prisma`. 
 
-```mermaid
-erDiagram
-    USERS ||--o{ ORGANIZATIONS : dono_de
-    ORGANIZATIONS ||--o{ ACCOUNTS : possui
-    ORGANIZATIONS ||--o{ CATEGORIES : define
-    ORGANIZATIONS ||--o{ TRANSACTIONS : contem
-    ACCOUNTS ||--o{ TRANSACTIONS : registra
-    CATEGORIES ||--o{ TRANSACTIONS : classifica
-    
-    USERS {
-        string id PK "Identificador Único"
-        string email "E-mail do Usuário"
-        string password_hash "Senha Criptografada"
-        string fullName "Nome Completo"
-        string reset_token "Token de Recuperação"
-        datetime reset_expiry "Expiração do Token"
-    }
-    
-    ORGANIZATIONS {
-        string organizationId PK "ID da Organização"
-        string name "Nome da Empresa/Conta"
-        string ownerId FK "ID do Dono"
-    }
-    
-    ACCOUNTS {
-        string id PK "ID da Conta"
-        string organizationId FK "ID da Organização"
-        string name "Nome da Conta (ex: Banco XYZ)"
-        string type "Tipo (Corrente, Poupança, etc)"
-        decimal balance "Saldo Atual"
-    }
-    
-    TRANSACTIONS {
-        string id PK "ID da Transação"
-        string organizationId FK "ID da Organização"
-        string accountId FK "ID da Conta"
-        string categoryId FK "ID da Categoria"
-        decimal amount "Valor"
-        string description "Descrição"
-        date date "Data do Lançamento"
-        string type "Tipo (Receita ou Despesa)"
-        date due_date "Vencimento"
-        date payment_date "Data de Pagamento"
-        string status "Status (pago ou pendente)"
-        boolean is_fixed "É Despesa Fixa?"
-    }
-    
-    CATEGORIES {
-        string id PK "ID da Categoria"
-        string organizationId FK "ID da Organização"
-        string name "Nome da Categoria"
-        string color "Cor do Ícone"
-        string type "Tipo (Receita, Despesa ou Ambos)"
-    }
-```
+> **🚨 AVISO CRÍTICO DE ENGENHARIA:** 
+> Nunca rode `npx prisma db push --accept-data-loss` neste repositório. O banco sofreu mutações orgânicas em sua autenticação (Users) e regras de negócio (Cartão de Crédito) que requerem extrema precaução. Apenas adicione migrações com scripts manuais caso o Schema do Prisma diverja do estado real.
+
+### Regras de Negócio Críticas Aplicadas no Banco:
+* **`ACCOUNTS`**: Além de saldo e organização, tipos marcados como "Cartão de Crédito" (`creditLimit`) exigem as chaves lógicas de ciclo de vida financeiro `closingDay` (Dia de Fechamento) e `dueDay` (Dia de Vencimento).
+* **`TRANSACTIONS`**: Responsável por todo o fluxo de caixa, as transações recebem tags estendidas: `status`, `payment_date`, e `is_fixed`.
+
+## 💳 Inteligência de Cartão de Crédito
+A aplicação possui um motor de simulação de Faturas de Cartão de Crédito de altíssimo nível. 
+1. Ao invés de perguntar a data manual da parcela, a API intercepta **compras parceladas**.
+2. Verifica em que dia a compra está ocorrendo em relação ao `closingDay` da conta atrelada ao Cartão de Crédito.
+3. Se a fatura atual já "virou", a primeira parcela é jogada automaticamente no `dueDay` do *próximo mês subsequente*, mapeando a cascata completa das *N* parcelas exatas ao longo do ano faturado.
 
 ## 🛠️ Como Rodar o Projeto
 
@@ -104,13 +65,13 @@ O projeto funciona com dois processos simultâneos: o servidor de desenvolviment
 
 ### 1. Requisitos
 - Node.js 18+
-- PHP 8.1+
+- PHP 8.1+ (Exigência para Argon2id Hashing e Nullsafe Operators).
 - MySQL 8.0
 
 ### 2. Configuração do Backend (API)
 A API reside em `public/api`.
-- Configure sua conexão com o banco de dados em `public/api/db.php`.
-- Inicie o servidor PHP (ou use Apache/Nginx apontando para `public`):
+- Configure sua conexão com o banco de dados editando o arquivo `public/api/db.php` (Configure constantes de Email e PEPPER para senhas fortes).
+- Inicie o servidor PHP apontando o root para a pasta `public`:
   ```bash
   php -S localhost:8000 -t public
   ```
@@ -121,25 +82,23 @@ Vá para a pasta raiz do projeto:
 npm install
 npm run dev
 ```
-O frontend estará disponível em `http://localhost:5173/financas`.
+O frontend estará servido em `http://localhost:5173/financas`.
 
-## ✨ Destaques do Projeto
+## ✨ Principais Destaques do Projeto
 
-- **Skins Premium**: Sistema de temas dinâmicos (Midnight, Emerald, Ocean, Gold, Light).
-- **Multi-tenancy**: Isolamento total de dados por organização via backend PHP.
-- **Recuperação de Senha**: Sistema seguro de "Esqueci minha senha" com SMTP direto e tokens de segurança.
-- **Gestão de Vencimentos**: Controle inteligente de despesas fixas com alertas de atraso.
-- **Filtros Avançados**: Visualização segmentada por Receitas, Despesas ou Ambos nas transações.
-- **Dashboard Analítico**: Gráficos analíticos para categorias e fluxo de caixa.
-- **Segurança**: Proteção contra Host Header Injection, diálogos de confirmação em ações críticas e feedback instantâneo via Toasts.
-- **Internacionalização (PT-BR)**: Formatação automática de moeda e decimais para o padrão brasileiro.
+- **Filtro Temporal Dinâmico ("Todos os Meses"):** Quebra a barreira da clássica navegação mensal por "Setas" num botão central de Filtro de Séries Temporais, dando visão global do saldo das contas.
+- **Skins Premium**: Sistema dinâmico e visualmente leve baseada em Tokens CSS no Tailwind.
+- **Painéis Escuros Fluídos (Glassmorphism)**: Efeito Translúcido responsivo que acompanha a rolagem suave.
+- **Multi-tenancy Absoluto**: Isolamento total de dados no Backend PHP entre diferentes organizações e usuários.
+- **Recuperação de Senha Segura**: Fluxo local forte com geração segura de tokens em criptografia nativa no backend.
+- **Design Adaptativo com Bloqueadores (Fixes)**: Interface que reconhece o tamanho do Drawer (Modal) em notebooks e habilita `overflow-y-auto`, não omitindo o rodapé da página.
 
-## 📁 Estrutura de Pastas
+## 📁 Estrutura de Pastas e Conhecimento
 
-- `/frontend`: Aplicação React (Vite).
-- `/public/api`: Endpoints PHP (Backend).
-- `/public/api/auth`: Módulos de autenticação e segurança.
-- `ARCHITECTURE.md`: Documentação técnica completa.
+Para futuras integrações do Agente, as documentações das regras estruturais residem em:
+- `/frontend`: Aplicação SPA principal.
+- `/public/api`: Endpoints RESTFul em raw PHP.
+- `/.agent/skills/financas-app/`: **SKILL** proprietária descrevendo comportamentos proibitivos de arquitetura.
 
 ---
-*Desenvolvido por Antigravity (Google Deepmind) para o usuário*
+*Desenvolvido e atualizado com inteligência via Antigravity Toolkit para gerir ativos de classe mundial.*

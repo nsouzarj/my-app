@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { apiService } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { X, AlertCircle } from 'lucide-react';
@@ -32,6 +33,11 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
   const [paymentDate, setPaymentDate] = useState('');
   const [status, setStatus] = useState<'paid' | 'pending'>('paid');
   const [isFixed, setIsFixed] = useState(false);
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [totalInstallments, setTotalInstallments] = useState<number>(2);
+  const [firstInstallmentDate, setFirstInstallmentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+  const [isAccountCreditCard, setIsAccountCreditCard] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -48,23 +54,30 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
     if (!organization) return;
     try {
       setIsFetchingDeps(true);
-      const [a, c] = await Promise.all([
-        apiService.get('accounts', { organizationId: organization.organizationId }),
-        apiService.get('categories', { organizationId: organization.organizationId })
-      ]);
-      setAccounts(a);
-      setCategories(c);
+      const accountsData = await apiService.get('accounts', { organizationId: organization.organizationId });
+      setAccounts(accountsData);
       
-      if (!transaction) {
-        if (a.length > 0) setAccountId(a[0].id);
-        if (c.length > 0) setCategoryId(c[0].id);
+      const catsData = await apiService.get('categories', { organizationId: organization.organizationId });
+      setCategories(catsData);
+
+      if (accountsData.length > 0 && !accountId && !transaction) {
+        setAccountId(accountsData[0].id);
       }
-    } catch (error) {
-      toast.error('Erro ao carregar dados auxiliares.');
+      
+      if (catsData.length > 0 && !categoryId && !transaction) {
+        setCategoryId(catsData[0].id);
+      }
+    } catch (err) {
+      toast.error('Erro ao carregar os dados financeiros.');
     } finally {
       setIsFetchingDeps(false);
     }
   }
+
+  useEffect(() => {
+    const acc = accounts.find(a => a.id === accountId);
+    setIsAccountCreditCard(acc?.type === 'CREDIT_CARD');
+  }, [accountId, accounts]);
 
   function populateForm(tx: any) {
     setDescription(tx.description);
@@ -89,6 +102,9 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
     setPaymentDate('');
     setStatus('paid');
     setIsFixed(false);
+    setIsInstallment(false);
+    setTotalInstallments(2);
+    setFirstInstallmentDate(format(new Date(), 'yyyy-MM-dd'));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -98,7 +114,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
     try {
       setIsLoading(true);
       const cleanAmount = amount.replace(/\./g, '').replace(',', '.');
-      const payload = {
+      const payload: any = {
         description,
         amount: parseFloat(cleanAmount),
         date,
@@ -109,8 +125,15 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
         due_date: dueDate || null,
         payment_date: paymentDate || null,
         status,
-        is_fixed: isFixed ? 1 : 0
+        is_fixed: isFixed ? 1 : 0,
       };
+
+      if (isInstallment && !transaction) {
+        payload.totalInstallments = totalInstallments;
+        payload.firstInstallmentDate = firstInstallmentDate;
+      } else {
+        payload.totalInstallments = 1;
+      }
 
       if (transaction?.id) {
         await apiService.put('transactions', transaction.id, payload);
@@ -266,7 +289,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
                 </div>
               </div>
 
-              {/* Advanced Controls Section (Fixed/Pending) */}
+              {/* Advanced Controls Section (Fixed/Pending/Installments) */}
               <div className="bg-app border border-app rounded-[24px] p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -277,28 +300,77 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
                       <AlertCircle size={18} />
                     </div>
                     <div>
-                      <span className="text-sm font-black text-app-text block">Lançamento Fixo?</span>
-                      <span className="text-[10px] text-app-text-dim uppercase tracking-wider font-bold">Repetir mensalmente</span>
+                      <span className="text-sm font-black text-app-text block">Assinatura / Conta Fixa</span>
+                      <span className="text-[10px] text-app-text-dim uppercase tracking-wider font-bold">Repete mensalmente (ex: Netflix, Aluguel)</span>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={isFixed} onChange={e => setIsFixed(e.target.checked)} className="sr-only peer" />
+                    <input type="checkbox" checked={isFixed} onChange={e => { setIsFixed(e.target.checked); setIsInstallment(false); }} className="sr-only peer" />
                     <div className="w-11 h-6 bg-app-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-app-accent"></div>
                   </label>
                 </div>
 
-                {isFixed && (
+                {!transaction && (
+                <div className="flex items-center justify-between pt-2 border-t border-app">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "p-2 rounded-xl transition-colors",
+                      isInstallment ? "bg-app-accent/20 text-app-accent" : "bg-app-soft text-app-text-dim"
+                    )}>
+                      <AlertCircle size={18} />
+                    </div>
+                    <div>
+                      <span className="text-sm font-black text-app-text block">Compra Parcelada</span>
+                      <span className="text-[10px] text-app-text-dim uppercase tracking-wider font-bold">Divide o valor em partes (ex: 10x no cartão)</span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={isInstallment} onChange={e => { setIsInstallment(e.target.checked); setIsFixed(false); }} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-app-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-app-accent"></div>
+                  </label>
+                </div>
+                )}
+
+                {isInstallment && !transaction && (
+                  <div className="pt-4 border-t border-app animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-app-text-dim uppercase tracking-widest ml-1">Número de Parcelas</label>
+                        <input 
+                          type="number" 
+                          min="2" max="72"
+                          value={totalInstallments}
+                          onChange={e => setTotalInstallments(parseInt(e.target.value))}
+                          className="w-full bg-app-soft/30 border-2 border-transparent focus:border-app-accent/30 rounded-2xl px-5 py-3 text-app-text font-bold outline-none transition-all"
+                        />
+                      </div>
+                      {!isAccountCreditCard ? (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-app-text-dim uppercase tracking-widest ml-1">1ª Parcela Em</label>
+                          <DateInput value={firstInstallmentDate} onChange={setFirstInstallmentDate} />
+                        </div>
+                      ) : (
+                        <div className="space-y-1 flex flex-col justify-center">
+                          <span className="text-[10px] font-black text-app-accent uppercase tracking-widest ml-1">Vencimento Automático</span>
+                          <span className="text-[10px] text-app-text-dim leading-tight ml-1">As datas seguirão a fatura do cartão.</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {(isFixed || isInstallment) && (
                   <div className="pt-4 border-t border-app grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="space-y-2">
                       <DateInput
-                        label="Vencimento"
+                        label={isInstallment ? "1º Vencimento" : "Vencimento"}
                         value={dueDate}
                         onChange={setDueDate}
                         className="py-2.5 bg-app text-xs border border-app rounded-xl"
                       />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-app-text-dim uppercase tracking-widest ml-1">Status</label>
+                        <label className="text-[10px] font-black text-app-text-dim uppercase tracking-widest ml-1">Status Base</label>
                         <select
                           value={status}
                           onChange={(e) => { setStatus(e.target.value as any); }}
