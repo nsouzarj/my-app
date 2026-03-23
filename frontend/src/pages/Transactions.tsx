@@ -141,6 +141,10 @@ export default function Transactions() {
     }
   }
 
+  const totalIncome = transactions.filter(t => t.type.toLowerCase() === 'income').reduce((acc, t) => acc + Number(t.amount), 0)
+  const totalExpense = transactions.filter(t => t.type.toLowerCase() === 'expense').reduce((acc, t) => acc + Number(t.amount), 0)
+  const netTotal = totalIncome - totalExpense
+
   return (
     <DashboardLayout>
       <div className="space-y-8 pb-20 sm:pb-0">
@@ -157,12 +161,32 @@ export default function Transactions() {
           </button>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
             <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
             <div className="h-8 w-px bg-app-soft hidden sm:block"></div>
-            <p className="text-xs font-bold text-app-text-dim uppercase tracking-wider">
-              {transactions.length} Lançamentos
-            </p>
+            
+            <div className="flex items-center gap-4 bg-app-card/60 px-4 py-2 rounded-xl flex-1 sm:flex-none border border-app shadow-inner overflow-x-auto custom-scrollbar">
+              <div className="flex flex-col items-start min-w-[70px]">
+                <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Receitas</span>
+                <span className="text-sm font-black text-emerald-500 truncate max-w-[100px] sm:max-w-none" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}
+                </span>
+              </div>
+              <div className="h-8 w-px bg-app-soft opacity-50"></div>
+              <div className="flex flex-col items-start min-w-[70px]">
+                <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Despesas</span>
+                <span className="text-sm font-black text-rose-500 truncate max-w-[100px] sm:max-w-none" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}
+                </span>
+              </div>
+              <div className="h-8 w-px bg-app-soft opacity-50"></div>
+              <div className="flex flex-col items-start min-w-[70px]">
+                <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Balanço</span>
+                <span className={cn("text-sm font-black truncate max-w-[100px] sm:max-w-none", netTotal >= 0 ? "text-sky-500" : "text-amber-500")} title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}
+                </span>
+              </div>
+            </div>
           </div>
           
           <div className="flex items-center gap-2 bg-app-card border border-app p-1 rounded-xl shadow-sm">

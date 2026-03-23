@@ -76,7 +76,7 @@ export default function Accounts() {
   const [isStatementOpen, setIsStatementOpen] = useState(false)
   const [statementTransactions, setStatementTransactions] = useState<any[]>([])
   const [isStatementLoading, setIsStatementLoading] = useState(false)
-  const [statementDate, setStatementDate] = useState(new Date())
+  const [statementDate, setStatementDate] = useState<Date | null>(new Date())
   const [statementSortBy, setStatementSortBy] = useState('date')
   const [statementSortOrder, setStatementSortOrder] = useState<'ASC' | 'DESC'>('DESC')
 
@@ -182,8 +182,8 @@ export default function Accounts() {
       const data = await apiService.get('transactions', { 
         organizationId: organization.organizationId,
         accountId: accountId,
-        startDate: format(startOfMonth(statementDate), 'yyyy-MM-dd'),
-        endDate: format(endOfMonth(statementDate), 'yyyy-MM-dd'),
+        startDate: statementDate ? format(startOfMonth(statementDate), 'yyyy-MM-dd') : '2000-01-01',
+        endDate: statementDate ? format(endOfMonth(statementDate), 'yyyy-MM-dd') : '2100-12-31',
         sortBy: statementSortBy,
         order: statementSortOrder
       })
