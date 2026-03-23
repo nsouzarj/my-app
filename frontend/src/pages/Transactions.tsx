@@ -45,7 +45,8 @@ export default function Transactions() {
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>(initialStatus)
-  const [categoryIdFilter, setCategoryIdFilter] = useState('all')
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set())
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false)
   const [accountIdFilter, setAccountIdFilter] = useState('all')
   const [accounts, setAccounts] = useState<any[]>([])
 
@@ -57,7 +58,7 @@ export default function Transactions() {
     if (organization) {
       fetchData()
     }
-  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter, categoryIdFilter, accountIdFilter])
+  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter, accountIdFilter])
 
   async function fetchData() {
     try {
@@ -69,8 +70,7 @@ export default function Transactions() {
         sortBy,
         order: sortOrder,
         type: typeFilter,
-        statusFilter: statusFilter,
-        categoryId: categoryIdFilter
+        statusFilter: statusFilter
       }
       if (accountIdFilter !== 'all') {
         params.accountId = accountIdFilter;
@@ -141,9 +141,23 @@ export default function Transactions() {
     }
   }
 
-  const totalIncome = transactions.filter(t => t.type.toLowerCase() === 'income').reduce((acc, t) => acc + Number(t.amount), 0)
-  const totalExpense = transactions.filter(t => t.type.toLowerCase() === 'expense').reduce((acc, t) => acc + Number(t.amount), 0)
+  const visibleTransactions = transactions.filter(t => !hiddenCategories.has(t.categoryId))
+
+  const totalIncome = visibleTransactions.filter(t => t.type.toLowerCase() === 'income').reduce((acc, t) => acc + Number(t.amount), 0)
+  const totalExpense = visibleTransactions.filter(t => t.type.toLowerCase() === 'expense').reduce((acc, t) => acc + Number(t.amount), 0)
   const netTotal = totalIncome - totalExpense
+
+  const toggleCategoryVisibility = (catId: string) => {
+    setHiddenCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(catId)) {
+        newSet.delete(catId)
+      } else {
+        newSet.add(catId)
+      }
+      return newSet
+    })
+  }
 
   return (
     <DashboardLayout>
@@ -255,16 +269,30 @@ export default function Transactions() {
                 ))}
               </select>
               
-              <select
-                value={categoryIdFilter}
-                onChange={(e) => setCategoryIdFilter(e.target.value)}
-                className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all flex-1 sm:max-w-[140px] truncate"
-              >
-                <option value="all">Todas Categorias</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <div className="relative flex-1 sm:max-w-[170px]">
+                <button
+                  onClick={() => setShowCategoryMenu(!showCategoryMenu)}
+                  className="w-full bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all text-left flex justify-between items-center"
+                >
+                  <span className="truncate">Categorias ({categories.length - hiddenCategories.size}/{categories.length})</span>
+                  <span className="ml-2 text-[8px]">▼</span>
+                </button>
+                {showCategoryMenu && (
+                  <div className="absolute top-full mt-2 left-0 w-56 bg-app-card border border-app rounded-xl shadow-2xl z-50 p-2 flex flex-col gap-1 max-h-64 overflow-y-auto custom-scrollbar">
+                    {categories.map(c => (
+                      <label key={c.id} className="flex items-center gap-2 text-xs font-bold text-app-text-dim hover:text-app-text cursor-pointer hover:bg-app-soft px-2 py-2 rounded-lg transition-all">
+                        <input 
+                          type="checkbox" 
+                          checked={!hiddenCategories.has(c.id)}
+                          onChange={() => toggleCategoryVisibility(c.id)}
+                          className="accent-app-text cursor-pointer w-4 h-4 rounded text-app-bg focus:ring-app-text"
+                        />
+                        <span className="truncate flex-1">{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -312,7 +340,7 @@ export default function Transactions() {
                          <LoadingSpinner size="md" label="Carregando transações..." />
                       </td>
                     </tr>
-                  ) : transactions.length === 0 ? (
+                  ) : visibleTransactions.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-20 text-center">
                          <Search className="w-12 h-12 text-app-text-dim mx-auto mb-4" />
@@ -320,7 +348,7 @@ export default function Transactions() {
                       </td>
                     </tr>
                   ) : (
-                    transactions.map(tx => (
+                    visibleTransactions.map(tx => (
                       <tr key={tx.id} className="hover:bg-app-soft/30 transition-colors group">
                         <td className="px-6 py-4 text-sm text-app-text-dim font-mono">
                           {formatDate(tx.date)}
@@ -407,13 +435,13 @@ export default function Transactions() {
               <div className="py-20 flex justify-center">
                 <LoadingSpinner size="md" label="Carregando..." />
               </div>
-            ) : transactions.length === 0 ? (
+            ) : visibleTransactions.length === 0 ? (
               <div className="py-20 text-center bg-app-card border border-app rounded-3xl">
                  <Search className="w-12 h-12 text-app-text-dim mx-auto mb-4 opacity-20" />
                  <p className="text-app-text-dim">Nenhuma transação encontrada.</p>
               </div>
             ) : (
-              transactions.map(tx => (
+              visibleTransactions.map(tx => (
                 <div key={tx.id} className="bg-app-card border border-app rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden group">
                   {/* Accent Line for Type */}
                   <div className={`absolute top-0 left-0 w-1.5 h-full ${tx.type.toLowerCase() === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
