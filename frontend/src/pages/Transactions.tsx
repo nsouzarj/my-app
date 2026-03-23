@@ -160,106 +160,113 @@ export default function Transactions() {
             <Plus size={16} /> Novo Lançamento
           </button>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
-            <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
-            <div className="h-8 w-px bg-app-soft hidden sm:block"></div>
-            
-            <div className="flex items-center gap-4 bg-app-card/60 px-4 py-2 rounded-xl flex-1 sm:flex-none border border-app shadow-inner overflow-x-auto custom-scrollbar">
-              <div className="flex flex-col items-start min-w-[70px]">
-                <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Receitas</span>
-                <span className="text-sm font-black text-emerald-500 truncate max-w-[100px] sm:max-w-none" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}>
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}
-                </span>
-              </div>
-              <div className="h-8 w-px bg-app-soft opacity-50"></div>
-              <div className="flex flex-col items-start min-w-[70px]">
-                <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Despesas</span>
-                <span className="text-sm font-black text-rose-500 truncate max-w-[100px] sm:max-w-none" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}>
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}
-                </span>
-              </div>
-              <div className="h-8 w-px bg-app-soft opacity-50"></div>
-              <div className="flex flex-col items-start min-w-[70px]">
-                <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Balanço</span>
-                <span className={cn("text-sm font-black truncate max-w-[100px] sm:max-w-none", netTotal >= 0 ? "text-sky-500" : "text-amber-500")} title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}>
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}
-                </span>
+        <div className="flex flex-col gap-4">
+          
+          {/* Top Row: Date and Totals */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap w-full">
+              <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
+              <div className="h-8 w-px bg-app-soft hidden sm:block"></div>
+              
+              <div className="flex items-center justify-between sm:justify-start gap-4 bg-app-card/60 px-4 py-2 rounded-xl flex-1 border border-app shadow-inner overflow-x-auto custom-scrollbar">
+                <div className="flex flex-col items-start min-w-[70px]">
+                  <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Receitas</span>
+                  <span className="text-sm font-black text-emerald-500 truncate max-w-[100px] sm:max-w-none" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}>
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}
+                  </span>
+                </div>
+                <div className="h-8 w-px bg-app-soft opacity-50"></div>
+                <div className="flex flex-col items-start min-w-[70px]">
+                  <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Despesas</span>
+                  <span className="text-sm font-black text-rose-500 truncate max-w-[100px] sm:max-w-none" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}>
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}
+                  </span>
+                </div>
+                <div className="h-8 w-px bg-app-soft opacity-50"></div>
+                <div className="flex flex-col items-start min-w-[70px]">
+                  <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Balanço</span>
+                  <span className={cn("text-sm font-black truncate max-w-[100px] sm:max-w-none", netTotal >= 0 ? "text-sky-500" : "text-amber-500")} title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}>
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2 bg-app-card border border-app p-1 rounded-xl shadow-sm">
-            <button
-              onClick={() => setTypeFilter('all')}
-              className={cn(
-                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
-                typeFilter === 'all' ? "bg-app-text text-app-bg shadow-md" : "text-app-text-dim hover:text-app-text"
-              )}
+            
+            <button 
+              onClick={fetchData}
+              className="p-2.5 text-app-text-dim hover:text-app-text hover:bg-app-soft rounded-xl transition-all self-end sm:self-auto border border-app shadow-sm"
+              title="Atualizar dados"
             >
-              Ambos
-            </button>
-            <button
-              onClick={() => setTypeFilter('income')}
-              className={cn(
-                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
-                typeFilter === 'income' ? "bg-emerald-500 text-white shadow-md font-black" : "text-app-text-dim hover:text-emerald-500"
-              )}
-            >
-              Receitas
-            </button>
-            <button
-              onClick={() => setTypeFilter('expense')}
-              className={cn(
-                "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
-                typeFilter === 'expense' ? "bg-rose-500 text-white shadow-md font-black" : "text-app-text-dim hover:text-rose-500"
-              )}
-            >
-              Despesas
+              <Search className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <select
-              value={accountIdFilter}
-              onChange={(e) => setAccountIdFilter(e.target.value)}
-              className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all max-w-[140px] truncate"
-            >
-              <option value="all">Todas Contas</option>
-              {accounts.map(a => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-            <div className="h-4 w-px bg-app-soft mx-1"></div>
-            <select
-              value={categoryIdFilter}
-              onChange={(e) => setCategoryIdFilter(e.target.value)}
-              className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all max-w-[140px] truncate"
-            >
-              <option value="all">Todas Categorias</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <div className="h-4 w-px bg-app-soft mx-1"></div>
-            <select
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value as any); }}
-              className="bg-app-card border border-app text-app-text text-xs font-bold px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-app-accent shadow-sm cursor-pointer hover:bg-app-soft transition-all"
-            >
-              <option value="all">Todos os Status</option>
-              <option value="paid">Pagos</option>
-              <option value="pending">Pendentes</option>
-            </select>
+          {/* Bottom Row: Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-2 bg-app-card border border-app p-1 rounded-xl shadow-sm overflow-x-auto min-w-max">
+              <button
+                onClick={() => setTypeFilter('all')}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                  typeFilter === 'all' ? "bg-app-text text-app-bg shadow-md" : "text-app-text-dim hover:text-app-text"
+                )}
+              >
+                Ambos
+              </button>
+              <button
+                onClick={() => setTypeFilter('income')}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                  typeFilter === 'income' ? "bg-emerald-500 text-white shadow-md font-black" : "text-app-text-dim hover:text-emerald-500"
+                )}
+              >
+                Receitas
+              </button>
+              <button
+                onClick={() => setTypeFilter('expense')}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                  typeFilter === 'expense' ? "bg-rose-500 text-white shadow-md font-black" : "text-app-text-dim hover:text-rose-500"
+                )}
+              >
+                Despesas
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-1">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'paid' | 'pending')}
+                className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all flex-1 sm:max-w-32"
+              >
+                <option value="all">Status: Todos</option>
+                <option value="paid">Pagos / S. Venc.</option>
+                <option value="pending">Pendentes</option>
+              </select>
+              
+              <select
+                value={accountIdFilter}
+                onChange={(e) => setAccountIdFilter(e.target.value)}
+                className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all flex-1 sm:max-w-[140px] truncate"
+              >
+                <option value="all">Todas Contas</option>
+                {accounts.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+              
+              <select
+                value={categoryIdFilter}
+                onChange={(e) => setCategoryIdFilter(e.target.value)}
+                className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all flex-1 sm:max-w-[140px] truncate"
+              >
+                <option value="all">Todas Categorias</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          
-          <button 
-            onClick={fetchData}
-            className="p-2.5 text-app-text-dim hover:text-app-text hover:bg-app-soft rounded-xl transition-all"
-            title="Atualizar dados"
-          >
-            <Search className="w-5 h-5" />
-          </button>
         </div>
 
         <div className="space-y-4">
