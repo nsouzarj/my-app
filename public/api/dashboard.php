@@ -3,21 +3,30 @@
 require_once 'db.php';
 
 $organizationId = $_GET['organizationId'] ?? 'default_org';
-$monthParam = $_GET['month'] ?? null;
-$yearParam = $_GET['year'] ?? null;
+$startDateInput = $_GET['startDate'] ?? null;
+$endDateInput = $_GET['endDate'] ?? null;
 
-if ($monthParam && $yearParam) {
-    try {
-        $now = new DateTime("$yearParam-$monthParam-01");
-    } catch (Exception $e) {
+if ($startDateInput && $endDateInput) {
+    $startOfMonth = $startDateInput . ' 00:00:00';
+    $endOfMonth = $endDateInput . ' 23:59:59';
+} else {
+    $monthParam = $_GET['month'] ?? null;
+    $yearParam = $_GET['year'] ?? null;
+    
+    if ($monthParam && $yearParam) {
+        try {
+            $now = new DateTime("$yearParam-$monthParam-01");
+        } catch (Exception $e) {
+            $now = new DateTime();
+        }
+    } else {
         $now = new DateTime();
     }
-} else {
-    $now = new DateTime();
+    
+    $startOfMonth = (clone $now)->modify('first day of this month')->format('Y-m-d 00:00:00');
+    $endOfMonth = (clone $now)->modify('last day of this month')->format('Y-m-d 23:59:59');
 }
 
-$startOfMonth = (clone $now)->modify('first day of this month')->format('Y-m-d 00:00:00');
-$endOfMonth = (clone $now)->modify('last day of this month')->format('Y-m-d 23:59:59');
 $actualNow = new DateTime();
 
 // 1. Total Balance

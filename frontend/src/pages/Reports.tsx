@@ -7,22 +7,26 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { cn } from '../lib/utils'
+import { DateFilter } from '../components/ui/DateFilter'
+import { startOfMonth, endOfMonth, format } from 'date-fns'
 
 export default function Reports() {
   const { organization } = useAuth()
   const [reportData, setReportData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [period, setPeriod] = useState('month')
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
 
   useEffect(() => {
     if (organization) fetchReportData()
-  }, [organization, period])
+  }, [organization, selectedDate])
 
   async function fetchReportData() {
     try {
       setIsLoading(true)
+      const startDate = selectedDate ? format(startOfMonth(selectedDate), 'yyyy-MM-dd') : '2000-01-01';
+      const endDate = selectedDate ? format(endOfMonth(selectedDate), 'yyyy-MM-dd') : '2100-12-31';
       // Usaremos o mesmo dashboard data por enquanto, mas futuramente uma rota reports.php
-      const data = await apiService.get('dashboard', { organizationId: organization.organizationId, period })
+      const data = await apiService.get('dashboard', { organizationId: organization.organizationId, startDate, endDate })
       setReportData(data)
     } catch (error) {
       toast.error('Erro ao carregar relatórios.')
@@ -57,15 +61,10 @@ export default function Reports() {
             <h1 className="text-3xl font-bold text-app-text tracking-tight">Relatórios Detalhados</h1>
             <p className="text-app-text-dim mt-1">Visão analítica da sua saúde financeira.</p>
           </div>
-          <div className="flex gap-3">
-             <select 
-               value={period} 
-               onChange={e => setPeriod(e.target.value)}
-               className="bg-app-card border border-app rounded-xl px-4 py-2 text-sm text-app-text font-bold outline-none cursor-pointer hover:bg-app-soft transition-all"
-             >
-               <option value="month">Este Mês</option>
-               <option value="year">Este Ano</option>
-             </select>
+          <div className="flex flex-col sm:flex-row gap-3">
+             <div className="w-full sm:w-auto">
+               <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
+             </div>
              <button 
                onClick={exportPDF}
                className="flex items-center gap-2 bg-app-text text-app-bg px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg text-sm group"

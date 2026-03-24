@@ -84,6 +84,11 @@ npm run dev
 ```
 O frontend estará servido em `http://localhost:5173/financas`.
 
+## 📝 Últimas Atualizações (Changelog)
+
+- **Layout Mobile de Transações:** Ajuste de responsividade no Resumo do Painel (Receitas, Despesas, Balanço). Transição de container flex para Grid (3 colunas), garantindo alinhamento e leitura confortável de métricas grandes no celular.
+- **Relatórios Dinâmicos (Date Filter):** O engessado seletor de "Este Mês / Este Ano" foi substituído pelo componente inteligente `<DateFilter />`. A API de backend (`dashboard.php`) foi adaptada para interpretar requisições amplas via `startDate` e `endDate`, destravando o poderoso recurso de "Todos os Meses".
+
 ## ✨ Principais Destaques do Projeto
 
 - **Filtro Temporal Dinâmico ("Todos os Meses"):** Quebra a barreira da clássica navegação mensal por "Setas" num botão central de Filtro de Séries Temporais, dando visão global do saldo das contas.

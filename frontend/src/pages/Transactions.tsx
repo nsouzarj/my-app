@@ -178,28 +178,30 @@ export default function Transactions() {
           
           {/* Top Row: Date and Totals */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap w-full">
-              <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full">
+              <div className="w-full sm:w-auto [&>div]:w-full [&>div]:justify-between">
+                <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
+              </div>
               <div className="h-8 w-px bg-app-soft hidden sm:block"></div>
               
-              <div className="flex items-center justify-between sm:justify-start gap-4 bg-app-card/60 px-4 py-2 rounded-xl flex-1 border border-app shadow-inner overflow-x-auto custom-scrollbar">
-                <div className="flex flex-col items-start min-w-[70px]">
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-4 bg-app-card/60 px-3 py-3 rounded-xl flex-1 border border-app shadow-inner overflow-hidden w-full">
+                <div className="flex flex-col items-center sm:items-start overflow-hidden">
                   <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Receitas</span>
-                  <span className="text-sm font-black text-emerald-500 truncate max-w-[100px] sm:max-w-none" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}>
+                  <span className="text-[11px] sm:text-sm font-black text-emerald-500 truncate w-full text-center sm:text-left" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}>
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}
                   </span>
                 </div>
-                <div className="h-8 w-px bg-app-soft opacity-50"></div>
-                <div className="flex flex-col items-start min-w-[70px]">
+                <div className="hidden sm:block h-8 w-px bg-app-soft opacity-50"></div>
+                <div className="flex flex-col items-center sm:items-start overflow-hidden border-x border-app-soft/50 sm:border-0 px-1 sm:px-0">
                   <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Despesas</span>
-                  <span className="text-sm font-black text-rose-500 truncate max-w-[100px] sm:max-w-none" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}>
+                  <span className="text-[11px] sm:text-sm font-black text-rose-500 truncate w-full text-center sm:text-left" title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}>
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}
                   </span>
                 </div>
-                <div className="h-8 w-px bg-app-soft opacity-50"></div>
-                <div className="flex flex-col items-start min-w-[70px]">
+                <div className="hidden sm:block h-8 w-px bg-app-soft opacity-50"></div>
+                <div className="flex flex-col items-center sm:items-start overflow-hidden">
                   <span className="text-[10px] text-app-text-dim uppercase font-bold tracking-wider">Balanço</span>
-                  <span className={cn("text-sm font-black truncate max-w-[100px] sm:max-w-none", netTotal >= 0 ? "text-sky-500" : "text-amber-500")} title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}>
+                  <span className={cn("text-[11px] sm:text-sm font-black truncate w-full text-center sm:text-left", netTotal >= 0 ? "text-sky-500" : "text-amber-500")} title={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}>
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}
                   </span>
                 </div>
@@ -278,18 +280,38 @@ export default function Transactions() {
                   <span className="ml-2 text-[8px]">▼</span>
                 </button>
                 {showCategoryMenu && (
-                  <div className="absolute top-full mt-2 left-0 w-56 bg-app-card border border-app rounded-xl shadow-2xl z-50 p-2 flex flex-col gap-1 max-h-64 overflow-y-auto custom-scrollbar">
-                    {categories.map(c => (
-                      <label key={c.id} className="flex items-center gap-2 text-xs font-bold text-app-text-dim hover:text-app-text cursor-pointer hover:bg-app-soft px-2 py-2 rounded-lg transition-all">
-                        <input 
-                          type="checkbox" 
-                          checked={!hiddenCategories.has(c.id)}
-                          onChange={() => toggleCategoryVisibility(c.id)}
-                          className="accent-app-text cursor-pointer w-4 h-4 rounded text-app-bg focus:ring-app-text"
-                        />
-                        <span className="truncate flex-1">{c.name}</span>
-                      </label>
-                    ))}
+                  <div className="absolute top-full mt-2 left-0 w-56 bg-app-card border border-app rounded-xl shadow-2xl z-50 flex flex-col max-h-64 overflow-hidden">
+                    <div className="p-2 border-b border-app bg-app-soft/30">
+                       <label className="flex items-center gap-2 text-xs font-bold text-app-text cursor-pointer hover:bg-app-soft px-2 py-1.5 rounded-lg transition-all">
+                         <input 
+                           type="checkbox" 
+                           checked={hiddenCategories.size === 0}
+                           ref={(el) => { if (el) el.indeterminate = hiddenCategories.size > 0 && hiddenCategories.size < categories.length; }}
+                           onChange={() => {
+                              if (hiddenCategories.size === 0) {
+                                setHiddenCategories(new Set(categories.map(c => c.id)))
+                              } else {
+                                setHiddenCategories(new Set())
+                              }
+                           }}
+                           className="accent-app-text cursor-pointer w-4 h-4 rounded text-app-bg focus:ring-app-text"
+                         />
+                         <span className="truncate flex-1">Todas Categorias</span>
+                       </label>
+                    </div>
+                    <div className="p-2 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+                      {categories.map(c => (
+                        <label key={c.id} className="flex items-center gap-2 text-xs font-bold text-app-text-dim hover:text-app-text cursor-pointer hover:bg-app-soft px-2 py-2 rounded-lg transition-all">
+                          <input 
+                            type="checkbox" 
+                            checked={!hiddenCategories.has(c.id)}
+                            onChange={() => toggleCategoryVisibility(c.id)}
+                            className="accent-app-text cursor-pointer w-4 h-4 rounded text-app-bg focus:ring-app-text"
+                          />
+                          <span className="truncate flex-1">{c.name}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
