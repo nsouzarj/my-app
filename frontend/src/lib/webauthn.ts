@@ -40,7 +40,9 @@ export const webauthn = {
         ],
         authenticatorSelection: {
           authenticatorAttachment: "platform", // Força biometria do dispositivo (TouchID/FaceID/Fingerprint)
-          userVerification: "required"
+          userVerification: "required",
+          residentKey: "required", // Necessário para login sem e-mail/id (discoverable credential)
+          requireResidentKey: true
         },
         timeout: 60000
       }
