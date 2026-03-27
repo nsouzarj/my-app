@@ -65,9 +65,12 @@ if ($method === 'GET') {
     }
 
     $statusFilter = $_GET['statusFilter'] ?? 'all';
-    if ($statusFilter === 'paid' || $statusFilter === 'pending') {
+    if ($statusFilter === 'paid' || $statusFilter === 'pending' || $statusFilter === 'planned') {
         $sql .= " AND t.status = ?";
         $params[] = $statusFilter;
+    } else {
+        // Por padrão (all), não mostramos as planejadas para manter o extrato limpo
+        $sql .= " AND (t.status = 'paid' OR t.status = 'pending')";
     }
 
     $categoryIdFilter = $_GET['categoryId'] ?? null;
@@ -101,8 +104,8 @@ if ($method === 'POST') {
         $parentTransactionId = $id;
         $installmentAmount = round($amountInput / $totalInstallments, 2);
         
-        $stmt = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, categoryId, organizationId, due_date, payment_date, status, is_fixed, parentTransactionId, installmentNumber, totalInstallments, createdAt, updatedAt) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
+        $stmt = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, categoryId, organizationId, due_date, payment_date, status, is_fixed, reminderDays, parentTransactionId, installmentNumber, totalInstallments, createdAt, updatedAt) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
                                
         $baseDate = isset($data['firstInstallmentDate']) ? $data['firstInstallmentDate'] : $data['date'];
         
@@ -154,12 +157,13 @@ if ($method === 'POST') {
                 $data['is_fixed'] ?? 0,
                 $parentTransactionId,
                 $i,
-                $totalInstallments
+                $totalInstallments,
+                $data['reminderDays'] ?? null
             ]);
         }
     } else {
-        $stmt = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, categoryId, organizationId, due_date, payment_date, status, is_fixed, createdAt, updatedAt) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
+        $stmt = $pdo->prepare("INSERT INTO transactions (id, amount, description, date, type, accountId, categoryId, organizationId, due_date, payment_date, status, is_fixed, reminderDays, createdAt, updatedAt) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
         
         $stmt->execute([
             $id,
@@ -173,7 +177,8 @@ if ($method === 'POST') {
             $data['due_date'] ?? null,
             $data['payment_date'] ?? null,
             $data['status'] ?? 'paid',
-            $data['is_fixed'] ?? 0
+            $data['is_fixed'] ?? 0,
+            $data['reminderDays'] ?? null
         ]);
     }
 
@@ -208,6 +213,7 @@ if ($method === 'PUT') {
         payment_date = ?,
         status = ?,
         is_fixed = ?,
+        reminderDays = ?,
         updatedAt = NOW() 
         WHERE id = ? AND organizationId = ?");
         
@@ -222,6 +228,7 @@ if ($method === 'PUT') {
         $data['payment_date'] ?? null,
         $data['status'] ?? 'paid',
         $data['is_fixed'] ?? 0,
+        $data['reminderDays'] ?? null,
         $id,
         $data['organizationId']
     ]);

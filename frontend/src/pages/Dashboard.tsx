@@ -35,6 +35,7 @@ export default function Dashboard() {
         organizationId: organization?.organizationId,
         month,
         year,
+        reminderDays: organization?.reminderDays || 7,
         _t: Date.now()
       });
       setSummary(data);
@@ -177,6 +178,50 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+        
+        {/* Alertas de Planejamento (Upcoming Planned Transactions) */}
+        {summary?.upcomingAlerts?.length > 0 && (
+          <div className="bg-app-card border border-indigo-500/30 p-6 rounded-3xl shadow-xl shadow-indigo-500/5 transition-all animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3 text-indigo-500">
+                <div className="p-2 bg-indigo-500/10 rounded-xl">
+                  <CalendarDays size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-app-text">Atenção ao Planejamento</h3>
+                  <p className="text-[10px] text-app-text-dim font-black uppercase tracking-widest">Lançamentos previstos para os próximos dias</p>
+                </div>
+              </div>
+              <Link to="/planning" className="text-xs font-black text-indigo-500 hover:underline uppercase tracking-widest px-4 py-2 bg-indigo-500/10 rounded-xl transition-all">
+                Ver Planejamento
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {summary.upcomingAlerts.map((alert: any) => (
+                <div key={alert.id} className="relative overflow-hidden bg-app-soft/20 border border-app p-4 rounded-2xl group hover:border-indigo-500/50 transition-all">
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-black text-app-text truncate max-w-[180px]">{alert.description}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-app-text-dim">{formatDate(alert.date)}</span>
+                        <span className="w-1 h-1 rounded-full bg-app-soft"></span>
+                        <span className="text-[10px] font-black text-indigo-500">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(alert.amount)}</span>
+                      </div>
+                    </div>
+                    <Link to="/planning" className="w-10 h-10 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 active:scale-90 transition-all opacity-0 group-hover:opacity-100">
+                      <ArrowRight size={18} />
+                    </Link>
+                  </div>
+                  {/* Subtle background decoration */}
+                  <div className="absolute -right-4 -bottom-4 text-indigo-500/5 group-hover:text-indigo-500/10 transition-colors">
+                    <CalendarDays size={80} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

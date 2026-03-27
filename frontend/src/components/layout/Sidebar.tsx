@@ -1,4 +1,4 @@
-import { LayoutDashboard, ReceiptText, Tags, Wallet, Settings, Menu, X, LogOut, BarChart3, User, ShieldCheck } from "lucide-react"
+import { LayoutDashboard, ReceiptText, Calendar, Tags, Wallet, Settings, Menu, X, LogOut, BarChart3, User, ShieldCheck } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { useState } from "react"
 import { cn } from "../../lib/utils"
@@ -7,6 +7,7 @@ import { useAuth } from "../../contexts/AuthContext"
 const navigation = [
   { name: 'Painel', href: '/', icon: LayoutDashboard },
   { name: 'Transações', href: '/transactions', icon: ReceiptText },
+  { name: 'Planejamento', href: '/planning', icon: Calendar },
   { name: 'Relatórios', href: '/reports', icon: BarChart3 },
   { name: 'Contas', href: '/accounts', icon: Wallet },
   { name: 'Categorias', href: '/categories', icon: Tags },

@@ -3,7 +3,7 @@ import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw, Trash2, AlertOctagon, Fingerprint } from 'lucide-react'
+import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw, Trash2, AlertOctagon, Fingerprint, CalendarDays, Mail } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
@@ -15,6 +15,10 @@ export default function Settings() {
   const { skin, setSkin } = useTheme()
   const [orgName, setOrgName] = useState('')
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [reminderDays, setReminderDays] = useState(7)
+  const [emailNotifications, setEmailNotifications] = useState(false)
+  const [whatsappNotifications, setWhatsappNotifications] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isWebAuthnLoading, setIsWebAuthnLoading] = useState(false)
   const [isReconciling, setIsReconciling] = useState(false)
@@ -45,9 +49,13 @@ export default function Settings() {
   useEffect(() => {
     if (organization) {
       setOrgName(organization.name || '')
+      setReminderDays(organization.reminderDays || 7)
+      setEmailNotifications(organization.emailNotifications || false)
+      setWhatsappNotifications(organization.whatsappNotifications || false)
     }
     if (user) {
       setFullName(user.fullName || '')
+      setPhone(user.phone || '')
     }
   }, [organization, user])
 
@@ -62,16 +70,20 @@ export default function Settings() {
     try {
       await apiService.post('config', { 
         name: orgName, 
+        reminderDays: reminderDays,
+        emailNotifications: emailNotifications ? 1 : 0,
+        whatsappNotifications: whatsappNotifications ? 1 : 0,
         organizationId: organization.organizationId 
       })
 
       await apiService.post('auth/update_profile', {
         userId: user.id,
-        fullName: fullName
+        fullName: fullName,
+        phone: phone
       })
 
-      updateUser({ ...user, fullName })
-      updateOrganization({ ...organization, name: orgName })
+      updateUser({ ...user, fullName, phone })
+      updateOrganization({ ...organization, name: orgName, reminderDays, emailNotifications, whatsappNotifications })
       toast.success('Configurações salvas com sucesso!')
     } catch (error) {
       toast.error('Erro ao salvar configurações.')
@@ -221,15 +233,27 @@ export default function Settings() {
               </div>
               
               <div className="p-8 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-app-text-dim">Nome do Usuário</label>
-                  <input 
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Seu nome completo"
-                    className="w-full px-4 py-3 bg-app-bg border border-app rounded-xl text-app-text focus:ring-2 focus:ring-app-accent outline-none transition-all"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-app-text-dim">Nome do Usuário</label>
+                    <input 
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Seu nome completo"
+                      className="w-full px-4 py-3 bg-app-bg border border-app rounded-xl text-app-text focus:ring-2 focus:ring-app-accent outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-app-text-dim">Telefone / WhatsApp</label>
+                    <input 
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="(00) 00000-0000"
+                      className="w-full px-4 py-3 bg-app-bg border border-app rounded-xl text-app-text focus:ring-2 focus:ring-app-accent outline-none transition-all"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -244,11 +268,76 @@ export default function Settings() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-app-bg border border-app rounded-xl">
-                    <span className="text-xs text-app-text-dim block mb-1">ID da Organização</span>
-                    <span className="text-sm font-mono text-app-text-dim break-all">{organization?.organizationId}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-app">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-500">
+                        <CalendarDays size={16} />
+                      </div>
+                      <label className="text-sm font-black text-app-text uppercase tracking-widest">Aviso de Planejamento</label>
+                    </div>
+                    <p className="text-xs text-app-text-dim leading-relaxed">Quantos dias antes do vencimento você quer ver o alerta de gasto planejado no seu painel?</p>
+                    <div className="flex items-center gap-3">
+                       <input 
+                         type="number"
+                         min="1"
+                         max="60"
+                         value={reminderDays}
+                         onChange={(e) => setReminderDays(parseInt(e.target.value))}
+                         className="w-24 px-4 py-3 bg-app-bg border border-app rounded-xl text-app-text font-black focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                       />
+                       <span className="text-sm font-bold text-app-text-dim">dias de antecedência</span>
+                    </div>
                   </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-5 bg-app-bg border border-app rounded-[24px]">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500">
+                            <Mail size={22} />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-app-text tracking-wide uppercase">Notificações por E-mail</h4>
+                            <p className="text-xs text-app-text-dim mt-0.5">Receber resumo de contas a pagar por e-mail.</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={emailNotifications} 
+                            onChange={e => setEmailNotifications(e.target.checked)} 
+                            className="sr-only peer" 
+                          />
+                          <div className="w-12 h-6.5 bg-app-soft/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-5 bg-app-bg border border-app rounded-[24px]">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500">
+                             <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3z"></path></svg>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-app-text tracking-wide uppercase">Notificações por WhatsApp</h4>
+                            <p className="text-xs text-app-text-dim mt-0.5">Receber resumo de contas pelo WhatsApp.</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={whatsappNotifications} 
+                            onChange={e => setWhatsappNotifications(e.target.checked)} 
+                            className="sr-only peer" 
+                          />
+                          <div className="w-12 h-6.5 bg-app-soft/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-app-bg border border-app rounded-xl">
+                  <span className="text-xs text-app-text-dim block mb-1">ID da Organização</span>
+                  <span className="text-sm font-mono text-app-text-dim break-all">{organization?.organizationId}</span>
                 </div>
               </div>
 

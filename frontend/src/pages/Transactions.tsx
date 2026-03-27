@@ -24,14 +24,14 @@ interface Transaction {
   accountName?: string
   due_date?: string | null
   payment_date?: string | null
-  status: 'paid' | 'pending'
+  status: 'paid' | 'pending' | 'planned'
   is_fixed: boolean | number
 }
 
 export default function Transactions() {
   const { organization } = useAuth()
   const [searchParams] = useSearchParams()
-  const initialStatus = searchParams.get('status') as 'all' | 'paid' | 'pending' || 'all'
+  const initialStatus = searchParams.get('status') as 'all' | 'paid' | 'pending' | 'planned' || 'all'
   
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -44,7 +44,7 @@ export default function Transactions() {
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>(initialStatus)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending' | 'planned'>(initialStatus)
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set())
   const [showCategoryMenu, setShowCategoryMenu] = useState(false)
   const [accountIdFilter, setAccountIdFilter] = useState('all')
@@ -252,12 +252,13 @@ export default function Transactions() {
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-1">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'paid' | 'pending')}
-                className="bg-app-soft/30 text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all flex-1 sm:max-w-32"
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="bg-app-card text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all flex-1 sm:max-w-40"
               >
                 <option value="all">Status: Todos</option>
-                <option value="paid">Pagos / S. Venc.</option>
-                <option value="pending">Pendentes</option>
+                <option value="paid">✅ Pagos</option>
+                <option value="pending">⏳ Pendentes</option>
+                <option value="planned">📅 Planejados</option>
               </select>
               
               <select
@@ -403,7 +404,9 @@ export default function Transactions() {
                                 tx.status === 'paid' ? "bg-emerald-500/10 text-emerald-500" : 
                                 (new Date(tx.due_date) < new Date() ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500")
                               )}>
-                                {tx.status === 'paid' ? 'Pago' : (new Date(tx.due_date) < new Date() ? 'Atrasado' : 'Pendente')}
+                                {tx.status === 'paid' ? 'Pago' : 
+                                 (tx.status === 'planned' ? 'Planejada' : 
+                                 (new Date(tx.due_date!) < new Date() ? 'Atrasado' : 'Pendente'))}
                               </span>
                               <span className="text-[10px] text-app-text-dim font-bold">
                                 Vence {formatDate(tx.due_date)}
@@ -427,7 +430,7 @@ export default function Transactions() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                            {tx.status === 'pending' && (
+                            {(tx.status === 'pending' || tx.status === 'planned') && (
                               <button 
                                 onClick={() => setConfirmPay(tx)}
                                 className="p-2 text-emerald-500 hover:bg-emerald-500/10 transition-colors rounded-lg flex items-center gap-1 text-[10px] font-black uppercase"
@@ -509,13 +512,15 @@ export default function Transactions() {
                         tx.status === 'paid' ? "bg-emerald-500/10 text-emerald-500" : 
                         (new Date(tx.due_date) < new Date() ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500")
                       )}>
-                        {tx.status === 'paid' ? 'Pago' : (new Date(tx.due_date) < new Date() ? 'Atrasado' : 'Pendente')}
+                        {tx.status === 'paid' ? 'Pago' : 
+                         (tx.status === 'planned' ? 'Planejada' : 
+                         (new Date(tx.due_date!) < new Date() ? 'Atrasado' : 'Pendente'))}
                       </span>
                     </div>
                   )}
 
                   <div className="flex items-center justify-end gap-2 pt-2">
-                    {tx.status === 'pending' && (
+                    {(tx.status === 'pending' || tx.status === 'planned') && (
                       <button 
                         onClick={() => setConfirmPay(tx)}
                         className="p-2 text-emerald-500 hover:bg-emerald-400 font-black text-[10px] uppercase tracking-wider"

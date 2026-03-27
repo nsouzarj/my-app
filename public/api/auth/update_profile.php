@@ -9,14 +9,15 @@ if ($method === 'POST') {
         $data = getJsonInput();
         $userId = $data['userId'] ?? '';
         $fullName = $data['fullName'] ?? '';
+        $phone = $data['phone'] ?? '';
 
         if (empty($userId)) {
             echo json_encode(['success' => false, 'message' => 'ID do usuário obrigatório.']);
             exit;
         }
 
-        $stmt = $pdo->prepare("UPDATE users SET fullName = ?, updatedAt = NOW() WHERE id = ?");
-        $stmt->execute([$fullName, $userId]);
+        $stmt = $pdo->prepare("UPDATE users SET fullName = ?, phone = ?, updatedAt = NOW() WHERE id = ?");
+        $stmt->execute([$fullName, $phone, $userId]);
 
         echo json_encode(['success' => true, 'message' => 'Perfil atualizado com sucesso.']);
     } catch (Exception $e) {

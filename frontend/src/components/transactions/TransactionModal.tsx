@@ -31,11 +31,12 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
   const [categoryId, setCategoryId] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
-  const [status, setStatus] = useState<'paid' | 'pending'>('paid');
+  const [status, setStatus] = useState<'paid' | 'pending' | 'planned'>('paid');
   const [isFixed, setIsFixed] = useState(false);
   const [isInstallment, setIsInstallment] = useState(false);
   const [totalInstallments, setTotalInstallments] = useState<number>(2);
   const [firstInstallmentDate, setFirstInstallmentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [reminderDays, setReminderDays] = useState<number | string>('');
 
   const [isAccountCreditCard, setIsAccountCreditCard] = useState(false);
 
@@ -91,6 +92,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
     setPaymentDate(tx.payment_date ? new Date(tx.payment_date).toISOString().split('T')[0] : '');
     setStatus(tx.status || 'paid');
     setIsFixed(tx.is_fixed === 1 || tx.is_fixed === true);
+    setReminderDays(tx.reminderDays || '');
   }
 
   function resetForm() {
@@ -105,6 +107,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
     setIsInstallment(false);
     setTotalInstallments(2);
     setFirstInstallmentDate(format(new Date(), 'yyyy-MM-dd'));
+    setReminderDays('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -126,6 +129,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
         payment_date: paymentDate || null,
         status,
         is_fixed: isFixed ? 1 : 0,
+        reminderDays: reminderDays ? parseInt(reminderDays.toString()) : null,
       };
 
       if (isInstallment && !transaction) {
@@ -359,26 +363,47 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
                   </div>
                 )}
 
-                {(isFixed || isInstallment) && (
-                  <div className="pt-4 border-t border-app grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="space-y-2">
-                      <DateInput
-                        label={isInstallment ? "1º Vencimento" : "Vencimento"}
-                        value={dueDate}
-                        onChange={setDueDate}
-                        className="py-2.5 bg-app text-xs border border-app rounded-xl"
-                      />
+                <div className="pt-4 border-t border-app grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-app-text-dim uppercase tracking-widest ml-1">
+                      {isInstallment ? "1º Vencimento" : (isFixed ? "Vencimento" : "Data Limite/Vencimento")}
+                    </label>
+                    <DateInput
+                      value={dueDate}
+                      onChange={setDueDate}
+                      className="py-2.5 bg-app text-xs border border-app rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                      <label className="text-[10px] font-black text-app-text-dim uppercase tracking-widest ml-1">Status do Lançamento</label>
+                      <select
+                        value={status}
+                        onChange={(e) => { setStatus(e.target.value as any); }}
+                        className="w-full bg-app border border-app rounded-xl px-4 py-2.5 text-xs text-app-text font-bold outline-none cursor-pointer"
+                      >
+                        <option value="paid">✅ Pago</option>
+                        <option value="pending">⏳ Pendente</option>
+                        <option value="planned">📅 Planejada (Não abate saldo)</option>
+                      </select>
+                  </div>
+                </div>
+
+                {status === 'planned' && (
+                  <div className="pt-4 border-t border-app animate-in fade-in slide-in-from-top-2 duration-300 flex items-center gap-4">
+                    <div className="flex-1">
+                      <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-1">Avisar com antecedência:</span>
+                      <p className="text-[10px] text-app-text-dim leading-tight">Quantos dias antes do vencimento você quer ver o alerta no painel?</p>
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-app-text-dim uppercase tracking-widest ml-1">Status Base</label>
-                        <select
-                          value={status}
-                          onChange={(e) => { setStatus(e.target.value as any); }}
-                          className="w-full bg-app border border-app rounded-xl px-4 py-2.5 text-xs text-app-text font-bold outline-none cursor-pointer"
-                        >
-                          <option value="paid">Pago</option>
-                          <option value="pending">Pendente</option>
-                        </select>
+                    <div className="flex items-center gap-2">
+                       <input 
+                         type="number"
+                         min="1" max="99"
+                         value={reminderDays}
+                         onChange={e => setReminderDays(e.target.value)}
+                         placeholder="7"
+                         className="w-16 bg-app-soft/30 border-2 border-transparent focus:border-indigo-500/30 rounded-xl px-3 py-2 text-app-text font-black outline-none transition-all text-center"
+                       />
+                       <span className="text-[10px] font-bold text-app-text-dim uppercase">dias</span>
                     </div>
                   </div>
                 )}

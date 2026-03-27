@@ -81,19 +81,36 @@ foreach ($categories as $cat) {
     ];
 }
 
-// 7. Bills Summary (Pending/Overdue)
+// 7. Bills Summary (Pending/Planned/Overdue)
 $stmt = $pdo->prepare("SELECT 
     COUNT(*) as count, 
     SUM(amount) as total 
     FROM transactions 
-    WHERE organizationId = ? AND LOWER(type) = 'expense' AND status = 'pending'");
+    WHERE organizationId = ? AND LOWER(type) = 'expense' AND (status = 'pending' OR status = 'planned')");
 $stmt->execute([$organizationId]);
-$pendingBills = $stmt->fetch();
+$allUpcomingBills = $stmt->fetch();
 
+// 8. Overdue Count
 $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM transactions 
-                        WHERE organizationId = ? AND LOWER(type) = 'expense' AND status = 'pending' AND due_date <= ?");
-$stmt->execute([$organizationId, $actualNow->format('Y-m-d 23:59:59')]);
+                        WHERE organizationId = ? AND LOWER(type) = 'expense' AND (status = 'pending' OR status = 'planned') AND due_date < ?");
+$stmt->execute([$organizationId, $actualNow->format('Y-m-d 00:00:00')]);
 $overdueCount = (int)$stmt->fetch()['count'];
+
+// 9. Upcoming Alerts (N dias definidos pelo usuário)
+$reminderDays = isset($_GET['reminderDays']) ? (int)$_GET['reminderDays'] : 7;
+$upcomingLimit = (clone $actualNow)->modify("+$reminderDays days")->format('Y-m-d 23:59:59');
+
+$stmt = $pdo->prepare("SELECT t.id, t.description, t.amount, t.due_date, t.reminderDays, c.name as categoryName
+                        FROM transactions t 
+                        LEFT JOIN categories c ON t.categoryId = c.id
+                        WHERE t.organizationId = ? AND t.status = 'planned' 
+                        AND t.due_date >= ? 
+                        AND t.due_date <= DATE_ADD(?, INTERVAL COALESCE(t.reminderDays, ?) DAY)
+                        ORDER BY t.due_date ASC");
+$nowStr = $actualNow->format('Y-m-d 00:00:00');
+$stmt->execute([$organizationId, $nowStr, $nowStr, $reminderDays]);
+$upcomingAlerts = $stmt->fetchAll();
+foreach ($upcomingAlerts as &$alert) $alert['amount'] = (float)$alert['amount'];
 
 echo json_encode([
     'totalBalance' => $totalBalance,
@@ -109,9 +126,13 @@ echo json_encode([
     'recentTransactions' => $recentTransactions,
     'categoryBreakdown' => $categoryBreakdown,
     'pendingBills' => [
-        'count' => (int)$pendingBills['count'],
-        'total' => (float)$pendingBills['total'],
+        'count' => (int)$allUpcomingBills['count'],
+        'total' => (float)$allUpcomingBills['total'],
         'overdueCount' => $overdueCount
+    ],
+    'upcomingAlerts' => $upcomingAlerts,
+    'config' => [
+        'reminderDays' => $reminderDays
     ]
 ]);
 ?>

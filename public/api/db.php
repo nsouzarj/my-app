@@ -69,12 +69,12 @@ function recalculateAccountBalance($pdo, $accountId) {
     if (empty($accountId)) return;
 
     // 1. Somar todas as receitas (income)
-    $stmtInc = $pdo->prepare("SELECT SUM(amount) FROM transactions WHERE accountId = ? AND (LOWER(type) = 'income' OR type = 'income')");
+    $stmtInc = $pdo->prepare("SELECT SUM(amount) FROM transactions WHERE accountId = ? AND (LOWER(type) = 'income' OR type = 'income') AND status = 'paid'");
     $stmtInc->execute([$accountId]);
     $totalIncome = (float)$stmtInc->fetchColumn();
 
     // 2. Somar todas as despesas (expense)
-    $stmtExp = $pdo->prepare("SELECT SUM(amount) FROM transactions WHERE accountId = ? AND (LOWER(type) = 'expense' OR type = 'expense')");
+    $stmtExp = $pdo->prepare("SELECT SUM(amount) FROM transactions WHERE accountId = ? AND (LOWER(type) = 'expense' OR type = 'expense') AND status = 'paid'");
     $stmtExp->execute([$accountId]);
     $totalExpense = (float)$stmtExp->fetchColumn();
 

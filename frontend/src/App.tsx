@@ -8,6 +8,7 @@ import Reports from './pages/Reports';
 import Accounts from './pages/Accounts';
 import Categories from './pages/Categories';
 import Transactions from './pages/Transactions';
+import Planning from './pages/Planning';
 import Settings from './pages/Settings';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -43,6 +44,7 @@ function App() {
             <Route path="/accounts" element={<PrivateRoute><Accounts /></PrivateRoute>} />
             <Route path="/categories" element={<PrivateRoute><Categories /></PrivateRoute>} />
             <Route path="/transactions" element={<PrivateRoute><Transactions /></PrivateRoute>} />
+            <Route path="/planning" element={<PrivateRoute><Planning /></PrivateRoute>} />
             <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           </Routes>
           <Toaster position="bottom-right" />
