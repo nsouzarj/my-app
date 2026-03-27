@@ -3,11 +3,12 @@ import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw, Trash2, AlertOctagon } from 'lucide-react'
+import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw, Trash2, AlertOctagon, Fingerprint } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { cn } from '../lib/utils'
+import { webauthn } from '../lib/webauthn'
 
 export default function Settings() {
   const { user, organization, updateUser, updateOrganization, logout } = useAuth()
@@ -15,6 +16,7 @@ export default function Settings() {
   const [orgName, setOrgName] = useState('')
   const [fullName, setFullName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isWebAuthnLoading, setIsWebAuthnLoading] = useState(false)
   const [isReconciling, setIsReconciling] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isReconcileConfirmOpen, setIsReconcileConfirmOpen] = useState(false)
@@ -26,7 +28,7 @@ export default function Settings() {
     { id: 'ocean', name: 'Ocean', color: 'bg-sky-500', accent: 'bg-sky-400 border-sky-300' },
     { id: 'slate', name: 'Slate', color: 'bg-slate-400', accent: 'bg-slate-300 border-slate-200' },
     { id: 'gold', name: 'Premium Gold', color: 'bg-amber-500', accent: 'bg-amber-400 border-amber-300' },
-    { id: 'cyberpunk', name: 'Cyberpunk', color: 'bg-[#050505]', accent: 'bg-[#00f2ff] border-[#1a1a1e]' },
+    { id: 'cyberpool', name: 'Cyber-Pool', color: 'bg-[#00e5ff]', accent: 'bg-[#ff5f00] border-[#003035]' },
     { id: 'nordic', name: 'Nordic Shore', color: 'bg-[#2e3440]', accent: 'bg-[#88c0d0] border-[#4c566a]' },
     { id: 'velvet', name: 'Black Velvet', color: 'bg-[#000000]', accent: 'bg-[#e11d48] border-[#1a1a1a]' },
     { id: 'forest', name: 'Deep Forest', color: 'bg-[#06100c]', accent: 'bg-[#22c55e] border-[#1a3b30]' },
@@ -123,6 +125,45 @@ export default function Settings() {
     }
   }
 
+  async function handleRegisterBiometrics() {
+    if (!webauthn.isSupported()) {
+      toast.error('Seu navegador não suporta biometria.')
+      return
+    }
+
+    setIsWebAuthnLoading(true)
+    try {
+      // 1. Obter desafio
+      const challengeData = await apiService.auth.webauthn.getChallenge()
+      if (!challengeData.success) throw new Error(challengeData.error || 'Erro ao obter desafio')
+
+      // 2. Registrar no navegador
+      const credential = await webauthn.register(challengeData.challenge, {
+        id: user.id.toString(),
+        name: user.email,
+        displayName: user.fullName || user.email
+      })
+
+      // 3. Salvar no servidor
+      const result = await apiService.auth.webauthn.register({
+        ...credential,
+        userId: user.id
+      })
+
+      if (result.success) {
+        toast.success('Biometria registrada com sucesso! Agora você pode entrar usando sua digital.')
+      } else {
+        throw new Error(result.error || 'Erro ao salvar biometria')
+      }
+    } catch (error: any) {
+      if (error.name !== 'NotAllowedError') {
+        toast.error('Erro ao configurar biometria: ' + (error.message || 'Tente novamente'))
+      }
+    } finally {
+      setIsWebAuthnLoading(false)
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-10">
@@ -155,9 +196,18 @@ export default function Settings() {
                 <ShieldCheck size={20} className="text-app-bg opacity-70" />
                 <h3 className="font-bold">Segurança</h3>
               </div>
-              <p className="text-sm text-app-bg/80 leading-relaxed font-medium">
-                Sua conta está protegida pelo nosso sistema de autenticação customizado.
+              <p className="text-sm text-app-bg/80 leading-relaxed font-medium mb-6">
+                Sua conta está protegida. Ative a biometria para um acesso mais rápido e seguro.
               </p>
+              
+              <button
+                onClick={handleRegisterBiometrics}
+                disabled={isWebAuthnLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-app-bg text-app-text rounded-xl font-bold text-sm hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                {isWebAuthnLoading ? <LoadingSpinner size="sm" className="border-app-text border-t-app-accent" /> : <Fingerprint size={18} />}
+                {isWebAuthnLoading ? 'Configurando...' : 'Ativar Digital neste Celular'}
+              </button>
             </div>
           </div>
 

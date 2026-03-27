@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { apiService } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ChevronRight, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { webauthn } from '../lib/webauthn';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -31,6 +33,43 @@ export default function Login() {
       setError('Erro ao conectar ao servidor');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    if (!webauthn.isSupported()) {
+      setError('Seu navegador não suporta biometria ou você não tem um dispositivo configurado.');
+      return;
+    }
+
+    setBiometricLoading(true);
+    setError('');
+
+    try {
+      // 1. Obter desafio do servidor
+      const challengeData = await apiService.auth.webauthn.getChallenge();
+      if (!challengeData.success) {
+        throw new Error(challengeData.error || 'Falha ao obter desafio');
+      }
+
+      // 2. Autenticar no navegador
+      const credential = await webauthn.authenticate(challengeData.challenge);
+
+      // 3. Verificar no servidor
+      const result = await apiService.auth.webauthn.login(credential);
+      
+      if (result.success) {
+        login(result);
+        navigate('/');
+      } else {
+        setError(result.error || 'Falha na autenticação biométrica');
+      }
+    } catch (err: any) {
+      if (err.name !== 'NotAllowedError') { // Ignorar se o usuário cancelou
+        setError('Erro na biometria: ' + (err.message || 'Tente novamente'));
+      }
+    } finally {
+      setBiometricLoading(false);
     }
   };
 
@@ -103,6 +142,25 @@ export default function Login() {
           >
             {loading ? <LoadingSpinner size="sm" className="border-app-bg border-t-app-accent" /> : 'Acessar Conta'}
             {!loading && <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+          </button>
+
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-app"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-app-card px-2 text-app-text-dim font-black">ou</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleBiometricLogin}
+            disabled={biometricLoading || loading}
+            className="w-full bg-app-bg border border-app text-app-text hover:border-app-accent hover:text-app-accent font-black py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+          >
+            {biometricLoading ? <LoadingSpinner size="sm" className="border-app-text border-t-app-accent" /> : <Fingerprint className="w-5 h-5" />}
+            {biometricLoading ? 'Aguardando biometria...' : 'Entrar com Digital'}
           </button>
         </form>
 

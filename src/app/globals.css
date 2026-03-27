@@ -3,14 +3,32 @@
 :root {
   --background: #ffffff;
   --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
   --border: #e4e4e7;
+  --accent: #18181b;
+  --radius: 8px;
 }
 
 .dark {
   --background: #09090b;
   --foreground: #fafafa;
+  --card: #09090b;
+  --card-foreground: #fafafa;
   --border: #27272a;
+  --accent: #fafafa;
   color-scheme: dark;
+}
+
+.cyber-pool {
+  --background: #00e5ff; /* Vibrant Pool Blue */
+  --foreground: #003035; /* Deep Contrast Cyan */
+  --card: #ffffff;
+  --card-foreground: #003035;
+  --border: #00c4db;
+  --accent: #ff5f00; /* Vibrant Action Orange */
+  --radius: 2px; /* Sharp */
+  color-scheme: light;
 }
 
 @variant dark (&:where(.dark, .dark *));
@@ -18,7 +36,20 @@
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-border: var(--border);
+  --color-accent: var(--accent);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.5);
+  --radius-sm: calc(var(--radius) / 2);
+
+  --animate-reveal: reveal 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes reveal {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 body {
@@ -28,8 +59,38 @@ body {
   transition-property: background-color, border-color, color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
+  overflow-x: hidden;
 }
+
+.reveal {
+  opacity: 0;
+  animation: var(--animate-reveal);
+}
+
+.reveal-delay-1 { animation-delay: 100ms; }
+.reveal-delay-2 { animation-delay: 200ms; }
+.reveal-delay-3 { animation-delay: 300ms; }
 
 .mask-fade-out {
   mask-image: linear-gradient(to right, black 70%, transparent 100%);
+}
+
+/* Custom modern aesthetic classes */
+.btn-vibrant {
+  background-color: var(--accent);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius);
+  transition: all 200ms ease;
+  border: 2px solid var(--accent);
+}
+
+.btn-vibrant:hover {
+  background-color: transparent;
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.2);
 }

@@ -37,6 +37,20 @@ export const apiService = {
     register: async (data: any) => {
       const response = await api.post('/auth/register.php', data);
       return response.data;
+    },
+    webauthn: {
+      getChallenge: async () => {
+        const response = await api.get('/auth/webauthn_challenge.php');
+        return response.data;
+      },
+      register: async (data: any) => {
+        const response = await api.post('/auth/webauthn_register.php', data);
+        return response.data;
+      },
+      login: async (data: any) => {
+        const response = await api.post('/auth/webauthn_login.php', data);
+        return response.data;
+      }
     }
   }
 };

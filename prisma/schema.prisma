@@ -18,8 +18,24 @@ model User {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   organizationMembers OrganizationMember[]
+  credentials         UserCredential[]
 
   @@map("users")
+}
+
+model UserCredential {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  credentialId String   @unique @db.VarChar(512)
+  publicKey    Text
+  signCount    Int      @default(0)
+  userAgent    String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_credentials")
+  @@index([userId])
 }
 
 model Organization {

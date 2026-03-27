@@ -14,6 +14,7 @@ export function Providers({ children }: { children: ReactNode }) {
         defaultTheme="system"
         enableSystem
         disableTransitionOnChange
+        themes={['light', 'dark', 'system', 'cyber-pool']}
       >
         <ToastProvider>
           {children}

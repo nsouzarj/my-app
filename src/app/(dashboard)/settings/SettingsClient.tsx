@@ -31,6 +31,7 @@ export const SettingsClient: React.FC<SettingsClientProps> = ({ organization }) 
     const themes = [
         { id: 'light', label: 'Claro', icon: <Sun size={16} /> },
         { id: 'dark', label: 'Escuro', icon: <Moon size={16} /> },
+        { id: 'cyber-pool', label: 'Cyber-Pool', icon: <Monitor size={16} className="text-accent" /> },
         { id: 'system', label: 'Sistema', icon: <Monitor size={16} /> },
     ];
 

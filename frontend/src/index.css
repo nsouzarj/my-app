@@ -90,15 +90,18 @@
   --text-dim: #d6d3d1;
 }
 
-/* Modern Premium: Cyberpunk (Neon Cyan) */
-.skin-cyberpunk {
-  --bg-color: #050505;
-  --card-color: #0d0d0f;
-  --bg-soft: #121216;
-  --border-color: #1a1a1e;
-  --primary-color: #00f2ff;
-  --primary-dark: #70faff;
-  --text-dim: #4e5b6e;
+/* Modern Premium: Cyber-Pool (Vibrant Brutalist) */
+.skin-cyberpool {
+  --bg-color: #00e5ff;
+  --card-color: #ffffff;
+  --bg-soft: #00d2eb;
+  --border-color: #003035;
+  --primary-color: #003035;
+  --primary-dark: #001a1d;
+  --text-dim: #00454d;
+  --accent-income: #10b981;
+  --accent-expense: #ef4444;
+  --primary-color-override: #ff5f00; /* For action bits */
 }
 
 /* Modern Premium: Nordic Shore (Frost) */

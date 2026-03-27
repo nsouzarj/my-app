@@ -34,14 +34,14 @@ export function Sidebar({ orgName }: SidebarProps) {
       )}
 
       {/* Mobile Trigger */}
-      <header className="lg:hidden sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/80 backdrop-blur-md px-6 lg:px-8">
+      <header className="lg:hidden sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background px-6 lg:px-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
         <button 
-          className="text-zinc-500 hover:text-zinc-950 dark:hover:text-zinc-50"
+          className="text-foreground/70 hover:text-foreground"
           onClick={() => setIsSidebarOpen(true)}
         >
           <Menu className="w-6 h-6" />
         </button>
-        <span className="font-bold text-zinc-950 dark:text-zinc-50">{orgName}</span>
+        <span className="font-black uppercase tracking-tighter text-foreground">{orgName}</span>
       </header>
 
       {/* Sidebar Desktop/Drawer */}
@@ -50,14 +50,14 @@ export function Sidebar({ orgName }: SidebarProps) {
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full p-6">
-          <div className="flex items-center gap-3 mb-10 px-2">
-            <div className="w-8 h-8 bg-zinc-950 dark:bg-zinc-50 rounded-lg flex items-center justify-center">
-                <span className="text-white dark:text-black font-bold text-lg">{orgName.charAt(0)}</span>
+          <div className="flex items-center gap-3 mb-12 px-2">
+            <div className="w-10 h-10 bg-accent rounded-sm flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,0.2)]">
+                <span className="text-white font-black text-xl">{orgName.charAt(0)}</span>
             </div>
-            <span className="text-xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 truncate">{orgName}</span>
+            <span className="text-2xl font-black tracking-tighter uppercase text-foreground truncate">{orgName}</span>
           </div>
 
-          <nav className="flex-1 space-y-1">
+          <nav className="flex-1 space-y-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href
               return (
@@ -65,16 +65,16 @@ export function Sidebar({ orgName }: SidebarProps) {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium group text-sm",
+                    "flex items-center gap-3 px-4 py-3 rounded-sm transition-all font-bold uppercase tracking-wide text-xs border-2",
                     isActive 
-                      ? "bg-zinc-100 dark:bg-zinc-900 text-zinc-950 dark:text-zinc-50" 
-                      : "text-zinc-500 hover:text-zinc-950 dark:hover:text-zinc-50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
+                      ? "bg-accent border-accent text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]" 
+                      : "text-foreground/60 border-transparent hover:border-accent hover:text-foreground hover:bg-accent/10"
                   )}
                   onClick={() => setIsSidebarOpen(false)}
                 >
                   <item.icon className={cn(
                     "w-5 h-5 transition-colors",
-                    isActive ? "text-zinc-950 dark:text-zinc-50" : "text-zinc-400 group-hover:text-zinc-950 dark:group-hover:text-zinc-50"
+                    isActive ? "text-white" : "text-foreground/40 group-hover:text-foreground"
                   )} />
                   {item.name}
                 </Link>

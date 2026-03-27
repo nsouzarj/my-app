@@ -46,22 +46,22 @@ export default function DashboardPage() {
         label: 'Saldo Total', 
         value: formatCurrency(summary.totalBalance), 
         change: summary.balanceChange, 
-        color: 'bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black',
-        icon: <Wallet className="w-4 h-4" />
+        color: 'bg-accent text-white border-2 border-accent shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)]',
+        icon: <Wallet className="w-5 h-5" />
     },
     { 
         label: 'Receitas (Mês)', 
         value: formatCurrency(summary.monthlyIncome), 
         change: summary.incomeChange, 
-        color: 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-emerald-600',
-        icon: <ArrowUpRight className="w-4 h-4" />
+        color: 'bg-card border-2 border-foreground text-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]',
+        icon: <ArrowUpRight className="w-5 h-5" />
     },
     { 
         label: 'Despesas (Mês)', 
         value: formatCurrency(summary.monthlyExpenses), 
         change: summary.expenseChange, 
-        color: 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-red-600',
-        icon: <ArrowDownRight className="w-4 h-4" />
+        color: 'bg-card border-2 border-foreground text-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]',
+        icon: <ArrowDownRight className="w-5 h-5" />
     },
   ];
 
@@ -69,14 +69,14 @@ export default function DashboardPage() {
     <div className="space-y-8 p-6 md:p-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">Visão Geral</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-1">Bem-vindo de volta! Aqui está o resumo das suas finanças.</p>
+          <h1 className="text-5xl font-black uppercase tracking-tighter text-foreground italic">Visão Geral</h1>
+          <p className="text-foreground/70 font-bold mt-2 uppercase text-xs tracking-widest">Controle financeiro em estado sólido</p>
         </div>
         <Link 
             href="/transactions"
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black font-bold rounded-xl hover:opacity-90 transition-all shadow-lg"
+            className="flex items-center justify-center gap-3 px-8 py-4 bg-accent text-white font-black uppercase tracking-tighter rounded-sm hover:-translate-y-1 transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] border-2 border-accent"
         >
-            <ReceiptText size={20} />
+            <ReceiptText size={24} />
             Transações
         </Link>
       </div>
@@ -84,16 +84,16 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {cards.map((card) => (
           <div key={card.label} className={cn(
-            "p-6 rounded-2xl flex flex-col gap-4 transition-all hover:scale-[1.02] shadow-sm",
+            "p-8 rounded-sm flex flex-col gap-6 transition-all hover:-translate-y-1",
             card.color
           )}>
-            <div className="flex items-center justify-between opacity-80">
-                <span className="text-sm font-semibold uppercase tracking-wider">{card.label}</span>
+            <div className="flex items-center justify-between opacity-80 border-b border-current/20 pb-4">
+                <span className="text-xs font-black uppercase tracking-widest">{card.label}</span>
                 {card.icon}
             </div>
             <div className="flex items-end justify-between">
-                <span className="text-2xl font-bold">{card.value}</span>
-                <span className="text-xs font-bold px-2 py-1 rounded-full bg-black/10 dark:bg-white/10">
+                <span className="text-4xl font-black tracking-tighter italic">{card.value}</span>
+                <span className="text-xs font-black px-3 py-1 rounded-sm border-2 border-current">
                     {card.change}
                 </span>
             </div>
@@ -103,14 +103,14 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
          {/* Recent Activity */}
-         <div className="lg:col-span-4 p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-2">
-                    <History className="w-5 h-5 text-zinc-400" />
-                    <h3 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">Atividade Recente</h3>
+         <div className="lg:col-span-4 p-8 rounded-sm border-2 border-foreground bg-card shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)]">
+            <div className="flex items-center justify-between mb-10 pb-4 border-b-2 border-foreground/10">
+                <div className="flex items-center gap-3">
+                    <History className="w-6 h-6 text-accent" />
+                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-foreground">Atividade Recente</h3>
                 </div>
-                <Link href="/transactions" className="text-sm font-medium text-zinc-500 hover:text-zinc-950 dark:hover:text-zinc-50 transition-colors">
-                    Ver todas
+                <Link href="/transactions" className="text-xs font-black uppercase tracking-widest text-foreground/50 hover:text-accent transition-colors">
+                    Ver todas →
                 </Link>
             </div>
             <div className="space-y-6">
@@ -152,7 +152,7 @@ export default function DashboardPage() {
          </div>
 
          {/* Account Breakdown */}
-         <div className="lg:col-span-3 p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm flex flex-col gap-6">
+         <div className="lg:col-span-3 p-8 rounded-sm border-2 border-foreground bg-card shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] flex flex-col gap-6">
              <div className="flex items-center gap-2">
                  <Wallet className="w-5 h-5 text-zinc-400" />
                  <h3 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">Minhas Contas</h3>
@@ -182,7 +182,7 @@ export default function DashboardPage() {
          </div>
 
          {/* Category Chart */}
-         <div className="lg:col-span-4 p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+         <div className="lg:col-span-4 p-8 rounded-sm border-2 border-foreground bg-card shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)]">
              <div className="flex items-center gap-2 mb-8">
                  <History className="w-5 h-5 text-zinc-400" />
                  <h3 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">Distribuição de Gastos</h3>

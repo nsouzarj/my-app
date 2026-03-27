@@ -45,14 +45,14 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="lg:pl-72 flex flex-col min-h-screen">
         {/* Desktop Header */}
-        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center gap-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md px-6 lg:px-8">
+        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center gap-4 border-b-2 border-foreground/5 bg-background px-6 lg:px-8">
           <div className="flex-1" />
-          <div className="flex items-center gap-4">
-              {/* Optional header actions */}
+          <div className="flex items-center gap-4 bg-accent/5 p-1 rounded-sm border border-accent/10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-accent px-2">System Active</span>
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-10">
+        <main className="flex-1 p-6 lg:p-10 reveal">
           <div className="max-w-6xl mx-auto">
             {children}
           </div>
