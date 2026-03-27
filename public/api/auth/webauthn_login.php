@@ -27,7 +27,7 @@ try {
     }
 
     // Buscar organização primária
-    $stmt = $pdo->prepare("SELECT om.organizationId, o.name FROM organization_members om 
+    $stmt = $pdo->prepare("SELECT om.organizationId, o.name, o.reminderDays, o.emailNotifications, o.whatsappNotifications FROM organization_members om 
                            JOIN organizations o ON o.id = om.organizationId 
                            WHERE om.userId = ? LIMIT 1");
     $stmt->execute([$user['id']]);

@@ -132,8 +132,8 @@ export default function Planning() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-           <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+           <div className="lg:col-span-3 space-y-6">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-app-card border border-app p-4 rounded-3xl">
                  <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
                  <div className="flex items-center gap-2">
@@ -149,11 +149,11 @@ export default function Planning() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-app bg-app-soft/20">
-                        <th className="px-6 py-4 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Data Prevista</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Descrição</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Categoria</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-app-text-dim uppercase tracking-widest text-right">Valor</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-app-text-dim uppercase tracking-widest text-right">Ação</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Data Prevista</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Descrição</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Categoria</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest text-right">Valor</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest text-right">Ação</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-app">
@@ -164,8 +164,8 @@ export default function Planning() {
                       ) : (
                         transactions.map(tx => (
                           <tr key={tx.id} className="hover:bg-app-soft/10 transition-colors group">
-                            <td className="px-6 py-4 text-sm font-bold text-app-text-dim">{formatDate(tx.date)}</td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3 text-sm font-bold text-app-text-dim">{formatDate(tx.date)}</td>
+                            <td className="px-4 py-3">
                               <span className="text-sm font-black text-app-text block">{tx.description}</span>
                               {tx.reminderDays && (
                                 <span className="text-[9px] font-black text-indigo-500 uppercase tracking-tighter bg-indigo-500/10 px-1.5 py-0.5 rounded-md mt-1 inline-block">
@@ -173,16 +173,16 @@ export default function Planning() {
                                 </span>
                               )}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3">
                                <div className="flex items-center gap-2 text-xs text-app-text-dim">
                                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: categories.find(c => c.id === tx.categoryId)?.color }}></span>
                                   {tx.categoryName}
                                </div>
                             </td>
-                            <td className={cn("px-6 py-4 text-sm font-black text-right", tx.type.toLowerCase() === 'income' ? "text-emerald-500" : "text-rose-500")}>
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(tx.type.toLowerCase() === 'expense' ? -tx.amount : tx.amount)}
+                            <td className={cn("px-4 py-3 text-sm font-black text-right", tx.type.toLowerCase() === 'income' ? "text-emerald-500" : "text-rose-500")}>
+                               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(tx.type.toLowerCase() === 'expense' ? -tx.amount : tx.amount)}
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-4 py-3 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <button 
                                   onClick={() => handleConfirm(tx)}

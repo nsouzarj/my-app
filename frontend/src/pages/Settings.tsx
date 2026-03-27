@@ -176,6 +176,59 @@ export default function Settings() {
     }
   }
 
+  const [isPushLoading, setIsPushLoading] = useState(false)
+
+  async function handleEnableNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      toast.error('Seu navegador não suporta notificações web.')
+      return
+    }
+
+    setIsPushLoading(true)
+    try {
+      // 1. Registrar SW se necessário
+      const registration = await navigator.serviceWorker.register('/financas/sw.js', { scope: '/financas/' })
+      
+      // 2. Pedir permissão
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        throw new Error('Você negou a permissão para notificações.')
+      }
+
+      // 3. Inscrever no Push
+      const VAPID_PUBLIC_KEY = 'BBl5tpiuD1iUsMGGskH8CelnsS0_5xYfyPwoo1tMEvZBvorj1NKf0r2e9gVxHE40Nl9Gt3A1qV-d5Th3I7qjfrs'
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      })
+
+      // 4. Salvar no servidor
+      await apiService.post('auth/save_push', {
+        userId: user.id,
+        ...JSON.parse(JSON.stringify(subscription))
+      })
+
+      localStorage.setItem('webpush_enabled', 'true')
+      toast.success('Notificações ativadas! Você receberá alertas neste dispositivo.')
+    } catch (error: any) {
+      console.error('Push error:', error)
+      toast.error(error.message || 'Erro ao ativar notificações.')
+    } finally {
+      setIsPushLoading(false)
+    }
+  }
+
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/')
+    const rawData = window.atob(base64)
+    const outputArray = new Uint8Array(rawData.length)
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i)
+    }
+    return outputArray
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-10">
@@ -203,7 +256,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="bg-app-text text-app-bg rounded-2xl p-6 shadow-lg">
+            <div className="lg:hidden bg-app-text text-app-bg rounded-2xl p-6 shadow-lg">
               <div className="flex items-center gap-3 mb-4">
                 <ShieldCheck size={20} className="text-app-bg opacity-70" />
                 <h3 className="font-bold">Segurança</h3>
@@ -332,6 +385,16 @@ export default function Settings() {
                           <div className="w-12 h-6.5 bg-app-soft/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={handleEnableNotifications}
+                      disabled={isPushLoading}
+                      className="w-full flex items-center justify-center gap-2 p-5 bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 rounded-[24px] font-black uppercase text-xs hover:bg-indigo-500 hover:text-white transition-all disabled:opacity-50"
+                    >
+                      {isPushLoading ? <LoadingSpinner size="sm" className="border-indigo-100 border-t-white" /> : <ShieldCheck size={18} />}
+                      {isPushLoading ? 'Ativando...' : 'Ativar Alertas neste Navegador / Celular'}
+                    </button>
                   </div>
                 </div>
 

@@ -45,6 +45,9 @@ model Organization {
   createdBy String
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
+  reminderDays Int               @default(7)
+  emailNotifications Boolean     @default(false)
+  whatsappNotifications Boolean  @default(false)
   members   OrganizationMember[]
   accounts  Account[]
   categories Category[]

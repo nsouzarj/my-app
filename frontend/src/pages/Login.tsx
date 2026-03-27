@@ -144,7 +144,7 @@ export default function Login() {
             {!loading && <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
           </button>
 
-          <div className="relative py-2">
+          <div className="lg:hidden relative py-2">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-app"></div>
             </div>
@@ -157,7 +157,7 @@ export default function Login() {
             type="button"
             onClick={handleBiometricLogin}
             disabled={biometricLoading || loading}
-            className="w-full bg-app-bg border border-app text-app-text hover:border-app-accent hover:text-app-accent font-black py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+            className="lg:hidden w-full bg-app-bg border border-app text-app-text hover:border-app-accent hover:text-app-accent font-black py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
           >
             {biometricLoading ? <LoadingSpinner size="sm" className="border-app-text border-t-app-accent" /> : <Fingerprint className="w-5 h-5" />}
             {biometricLoading ? 'Aguardando biometria...' : 'Entrar com Digital'}

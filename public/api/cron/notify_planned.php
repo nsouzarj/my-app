@@ -22,7 +22,7 @@ try {
         $defaultDays = (int)$org['reminderDays'];
         
         // 2. Buscar usuários desta organização para enviar o e-mail via organization_members
-        $stmtUsers = $pdo->prepare("SELECT u.email, u.fullName 
+        $stmtUsers = $pdo->prepare("SELECT u.id, u.email, u.fullName 
                                     FROM users u
                                     JOIN organization_members om ON u.id = om.userId
                                     WHERE om.organizationId = ?");
@@ -41,7 +41,10 @@ try {
                 LEFT JOIN categories c ON t.categoryId = c.id
                 WHERE t.organizationId = ? 
                 AND t.status = 'planned' 
-                AND DATE(t.due_date) = DATE_ADD(CURDATE(), INTERVAL COALESCE(t.reminderDays, ?) DAY)";
+                AND (t.last_notified_at IS NULL OR DATE(t.last_notified_at) < CURDATE())
+                AND DATE(t.due_date) >= CURDATE()
+                AND DATE(t.due_date) <= DATE_ADD(CURDATE(), INTERVAL COALESCE(t.reminderDays, ?) DAY)
+                ORDER BY t.due_date ASC";
                 
         $stmtT = $pdo->prepare($sql);
         $stmtT->execute([$orgId, $defaultDays]);
@@ -72,7 +75,7 @@ try {
             }
             
             $message .= "Acesse o painel para confirmar estes pagamentos quando realizados.\n";
-            $message .= "http://127.0.0.1:5173/planning\n\n";
+            $message .= "https://nsouza.eti.br/financas/planning\n\n";
             $message .= "Atenciosamente,\nEquipe Finanças";
             
             try {
@@ -81,6 +84,42 @@ try {
             } catch (Exception $e) {
                 echo "ERRO ao enviar para {$to}: " . $e->getMessage() . "\n";
             }
+            
+            // Disparo WebPush
+            $stmtPush = $pdo->prepare("SELECT endpoint FROM user_push_subscriptions WHERE userId = ?");
+            $stmtPush->execute([$user['id']]);
+            $subs = $stmtPush->fetchAll();
+            
+            if (!empty($subs)) {
+                require_once __DIR__ . '/push_lib.php';
+                $vapidPublic = 'BBl5tpiuD1iUsMGGskH8CelnsS0_5xYfyPwoo1tMEvZBvorj1NKf0r2e9gVxHE40Nl9Gt3A1qV-d5Th3I7qjfrs';
+                $vapidPrivate = 'CYllZK74wn60VZ4sJha8uBE_60enORVIH5KDPzdWjXU';
+                $pushSender = new WebPushPuro($vapidPublic, $vapidPrivate);
+                
+                $payload = [
+                    'title' => 'Lembrete de Pagamento 💰',
+                    'body' => (count($upcoming) == 1 ? "Conta: " . $upcoming[0]['description'] : "Você tem " . count($upcoming) . " contas para pagar nos próximos dias."),
+                    'url' => '/financas/planning'
+                ];
+
+                foreach ($subs as $sub) {
+                    try {
+                        $res = $pushSender->sendNotification($sub['endpoint'], $payload);
+                        echo "Push enviado para {$user['id']} (Status: " . $res['status'] . ")\n";
+                    } catch (Exception $e) {
+                        echo "ERRO Push {$user['id']}: " . $e->getMessage() . "\n";
+                    }
+                }
+            }
+        }
+
+        // 5. Marcar estas transações como avisadas hoje para não repetir alarmes (Anti-Spam)
+        $upcIds = array_column($upcoming, 'id');
+        if (!empty($upcIds)) {
+            $placeholders = implode(',', array_fill(0, count($upcIds), '?'));
+            $stmtUpd = $pdo->prepare("UPDATE transactions SET last_notified_at = NOW() WHERE id IN ($placeholders)");
+            $stmtUpd->execute($upcIds);
+            echo "Org {$org['name']}: " . count($upcIds) . " conta(s) marcada(s) como avisadas hoje.\n";
         }
     }
     
