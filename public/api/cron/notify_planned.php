@@ -3,25 +3,25 @@
 require_once dirname(__DIR__) . '/db.php';
 require_once dirname(__DIR__) . '/auth/mailer.php';
 
-// Este script deve ser executado via CRON diariamente (ex: 0 8 * * *)
-// Ou chamado manualmente para testes: /api/cron/notify_planned.php
+// Este script deve ser executado via CRON (ex: 0 9,15,19 * * *)
+// Agora configurado para enviar 3 vezes ao dia conforme solicitado.
 
 header('Content-Type: text/plain');
 
 try {
     $mailer = new Mailer();
     
-    // 1. Buscar organizações que ativaram notificações
-    $stmtOrgs = $pdo->query("SELECT id, name, reminderDays FROM organizations WHERE emailNotifications = 1");
+    // 1. Buscar organizações (processar todas para garantir WebPush mesmo sem e-mail)
+    $stmtOrgs = $pdo->query("SELECT id, name, reminderDays, emailNotifications FROM organizations");
     $organizations = $stmtOrgs->fetchAll();
     
-    echo "Iniciando processamento de notificações de e-mail...\n";
+    echo "Iniciando processamento de notificações triplas...\n";
     
     foreach ($organizations as $org) {
         $orgId = $org['id'];
         $defaultDays = (int)$org['reminderDays'];
         
-        // 2. Buscar usuários desta organização para enviar o e-mail via organization_members
+        // 2. Buscar usuários desta organização
         $stmtUsers = $pdo->prepare("SELECT u.id, u.email, u.fullName 
                                     FROM users u
                                     JOIN organization_members om ON u.id = om.userId
@@ -31,17 +31,12 @@ try {
         
         if (empty($users)) continue;
 
-        // 3. Buscar transações planejadas que vencem EXATAMENTE no dia configurado de aviso
-        // Queremos avisar APENAS UMA VEZ qdo atingir o prazo.
-        // Prazo = DataVencimento - reminderDays
-        // Hoje == Prazo?
-        
+        // 3. Buscar transações planejadas no prazo
         $sql = "SELECT t.*, c.name as categoryName 
                 FROM transactions t
                 LEFT JOIN categories c ON t.categoryId = c.id
                 WHERE t.organizationId = ? 
                 AND t.status = 'planned' 
-                AND (t.last_notified_at IS NULL OR DATE(t.last_notified_at) < CURDATE())
                 AND DATE(t.due_date) >= CURDATE()
                 AND DATE(t.due_date) <= DATE_ADD(CURDATE(), INTERVAL COALESCE(t.reminderDays, ?) DAY)
                 ORDER BY t.due_date ASC";
@@ -57,35 +52,41 @@ try {
 
         echo "Org {$org['name']}: Encontrada(s) " . count($upcoming) . " conta(s).\n";
 
-        // 4. Montar e enviar e-mail para cada usuário
+        // 4. Processar cada usuário
         foreach ($users as $user) {
             $to = $user['email'];
             $subject = "💳 Lembrete de Conta Planejada - {$org['name']}";
             
-            $message = "Olá {$user['fullName']},\n\n";
-            $message .= "Este é um lembrete automático do seu sistema financeiro.\n";
-            $message .= "As seguintes contas planejadas estão se aproximando do vencimento:\n\n";
+            // Montar mensagem
+            $msg = "Olá {$user['fullName']},\n\n";
+            $msg .= "Este é um lembrete automático do seu sistema financeiro.\n";
+            $msg .= "As seguintes contas planejadas estão se aproximando do vencimento:\n\n";
             
             foreach ($upcoming as $tx) {
                 $venc = date('d/m/Y', strtotime($tx['due_date']));
                 $valor = "R$ " . number_format($tx['amount'], 2, ',', '.');
-                $message .= "• {$tx['description']} ({$tx['categoryName']})\n";
-                $message .= "  Vencimento: {$venc}\n";
-                $message .= "  Valor: {$valor}\n\n";
+                $msg .= "• {$tx['description']} (" . ($tx['categoryName'] ?? 'Geral') . ")\n";
+                $msg .= "  Vencimento: {$venc}\n";
+                $msg .= "  Valor: {$valor}\n\n";
             }
             
-            $message .= "Acesse o painel para confirmar estes pagamentos quando realizados.\n";
-            $message .= "https://nsouza.eti.br/financas/planning\n\n";
-            $message .= "Atenciosamente,\nEquipe Finanças";
-            
-            try {
-                $mailer->send($to, $subject, $message);
-                echo "E-mail enviado para {$to}\n";
-            } catch (Exception $e) {
-                echo "ERRO ao enviar para {$to}: " . $e->getMessage() . "\n";
+            $msg .= "Acesse o painel para confirmar estes pagamentos.\n";
+            $msg .= "https://nsouza.eti.br/financas/planning\n\n";
+            $msg .= "Atenciosamente,\nEquipe Finanças";
+
+            // A. Enviar e-mail apenas se habilitado
+            if ((int)$org['emailNotifications'] === 1) {
+                try {
+                    $mailer->send($to, $subject, $msg);
+                    echo "E-mail enviado para {$to}\n";
+                } catch (Exception $e) {
+                    echo "ERRO ao enviar para {$to}: " . $e->getMessage() . "\n";
+                }
+            } else {
+                echo "E-mail ignorado para {$to} (Desativado na Org).\n";
             }
             
-            // Disparo WebPush
+            // B. Enviar WebPush sempre que houver inscrição
             $stmtPush = $pdo->prepare("SELECT endpoint FROM user_push_subscriptions WHERE userId = ?");
             $stmtPush->execute([$user['id']]);
             $subs = $stmtPush->fetchAll();
@@ -98,7 +99,7 @@ try {
                 
                 $payload = [
                     'title' => 'Lembrete de Pagamento 💰',
-                    'body' => (count($upcoming) == 1 ? "Conta: " . $upcoming[0]['description'] : "Você tem " . count($upcoming) . " contas para pagar nos próximos dias."),
+                    'body' => (count($upcoming) == 1 ? "Conta: " . $upcoming[0]['description'] : "Você tem " . count($upcoming) . " contas para pagar."),
                     'url' => '/financas/planning'
                 ];
 
@@ -113,13 +114,13 @@ try {
             }
         }
 
-        // 5. Marcar estas transações como avisadas hoje para não repetir alarmes (Anti-Spam)
+        // 5. Atualizar last_notified_at (Apenas para log de auditoria, não bloqueia mais o reenvio diário)
         $upcIds = array_column($upcoming, 'id');
         if (!empty($upcIds)) {
             $placeholders = implode(',', array_fill(0, count($upcIds), '?'));
             $stmtUpd = $pdo->prepare("UPDATE transactions SET last_notified_at = NOW() WHERE id IN ($placeholders)");
             $stmtUpd->execute($upcIds);
-            echo "Org {$org['name']}: " . count($upcIds) . " conta(s) marcada(s) como avisadas hoje.\n";
+            echo "Org {$org['name']}: Log de disparo atualizado.\n";
         }
     }
     
