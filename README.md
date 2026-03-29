@@ -46,6 +46,74 @@ graph TD
 ## 📊 Modelo de Dados
 O mapeamento oficial das estruturas está definido no arquivo `prisma/schema.prisma`. 
 
+### Diagrama de Domínio (ER)
+
+```mermaid
+erDiagram
+    User ||--o{ UserCredential : has
+    User ||--o{ OrganizationMember : is_part_of
+    Organization ||--o{ OrganizationMember : has
+    Organization ||--o{ Account : owns
+    Organization ||--o{ Category : owns
+    Organization ||--o{ AccountType : owns
+    Organization ||--o{ Transaction : contains
+    Account ||--o{ Transaction : records
+    Category ||--o{ Transaction : labels
+
+    User {
+        String id PK
+        String email
+        String password
+        String fullName
+        String phone
+    }
+    UserCredential {
+        Int id PK
+        String userId FK
+        String credentialId
+    }
+    Organization {
+        String id PK
+        String name
+        String type
+        String createdBy
+    }
+    OrganizationMember {
+        String organizationId PK,FK
+        String userId PK,FK
+        String role
+    }
+    Account {
+        String id PK
+        String organizationId FK
+        String name
+        String type
+        Decimal balance
+        Decimal creditLimit
+    }
+    Category {
+        String id PK
+        String organizationId FK
+        String name
+        String type
+    }
+    Transaction {
+        String id PK
+        String accountId FK
+        String categoryId FK
+        String organizationId FK
+        Decimal amount
+        String type
+        DateTime date
+        String status
+    }
+    AccountType {
+        String id PK
+        String organizationId FK
+        String name
+    }
+```
+
 > **🚨 AVISO CRÍTICO DE ENGENHARIA:** 
 > Nunca rode `npx prisma db push --accept-data-loss` neste repositório. O banco sofreu mutações orgânicas em sua autenticação (Users) e regras de negócio (Cartão de Crédito) que requerem extrema precaução. Apenas adicione migrações com scripts manuais caso o Schema do Prisma diverja do estado real.
 
