@@ -11,7 +11,7 @@ if (!$data['email'] || !$data['password']) {
 
 try {
     // 1. Fetch user
-    $stmt = $pdo->prepare("SELECT id, email, password, fullName FROM users WHERE email = ?");
+    $stmt = $pdo->prepare("SELECT id, email, password, fullName, phone, reminderDays FROM users WHERE email = ?");
     $stmt->execute([$data['email']]);
     $user = $stmt->fetch();
 

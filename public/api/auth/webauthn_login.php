@@ -17,7 +17,7 @@ try {
     }
 
     // Buscar o usuário dono da credencial
-    $stmt = $pdo->prepare("SELECT id, email, fullName FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, email, fullName, phone, reminderDays FROM users WHERE id = ?");
     $stmt->execute([$credential['userId']]);
     $user = $stmt->fetch();
 
