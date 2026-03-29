@@ -3,7 +3,7 @@ import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw, Trash2, AlertOctagon, Fingerprint, CalendarDays, Mail } from 'lucide-react'
+import { Building2, User, Save, ShieldCheck, Palette, Check, Sun, Monitor, RefreshCw, Trash2, AlertOctagon, Fingerprint, CalendarDays, Mail, Download, Upload, Database } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { toast } from '../components/ui/Toast'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
@@ -49,13 +49,13 @@ export default function Settings() {
   useEffect(() => {
     if (organization) {
       setOrgName(organization.name || '')
-      setReminderDays(organization.reminderDays || 7)
       setEmailNotifications(organization.emailNotifications || false)
       setWhatsappNotifications(organization.whatsappNotifications || false)
     }
     if (user) {
       setFullName(user.fullName || '')
       setPhone(user.phone || '')
+      setReminderDays(user.reminderDays || 7)
     }
   }, [organization, user])
 
@@ -70,7 +70,6 @@ export default function Settings() {
     try {
       await apiService.post('config', { 
         name: orgName, 
-        reminderDays: reminderDays,
         emailNotifications: emailNotifications ? 1 : 0,
         whatsappNotifications: whatsappNotifications ? 1 : 0,
         organizationId: organization.organizationId 
@@ -79,11 +78,12 @@ export default function Settings() {
       await apiService.post('auth/update_profile', {
         userId: user.id,
         fullName: fullName,
-        phone: phone
+        phone: phone,
+        reminderDays: reminderDays
       })
 
-      updateUser({ ...user, fullName, phone })
-      updateOrganization({ ...organization, name: orgName, reminderDays, emailNotifications, whatsappNotifications })
+      updateUser({ ...user, fullName, phone, reminderDays })
+      updateOrganization({ ...organization, name: orgName, emailNotifications, whatsappNotifications })
       toast.success('Configurações salvas com sucesso!')
     } catch (error) {
       toast.error('Erro ao salvar configurações.')
@@ -229,6 +229,67 @@ export default function Settings() {
     return outputArray
   }
 
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+
+  async function handleExportBackup() {
+    setIsExporting(true)
+    try {
+      const response = await fetch('/financas/api/auth/export_backup.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+
+      if (!response.ok) throw new Error('Falha ao exportar backup');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `financas_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Backup exportado com sucesso!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao exportar backup');
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function handleImportBackup(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('userId', user.id);
+      formData.append('backup', file);
+
+      const response = await fetch('/financas/api/auth/import_backup.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message || 'Backup restaurado com sucesso!');
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        throw new Error(data.message || 'Erro ao restaurar backup');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao restaurar backup');
+    } finally {
+      setIsImporting(false);
+      e.target.value = '';
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-10">
@@ -273,6 +334,47 @@ export default function Settings() {
                 {isWebAuthnLoading ? <LoadingSpinner size="sm" className="border-app-text border-t-app-accent" /> : <Fingerprint size={18} />}
                 {isWebAuthnLoading ? 'Configurando...' : 'Ativar Digital neste Celular'}
               </button>
+            </div>
+
+            {/* Backup - Desktop Only */}
+            <div className="hidden md:block bg-app-card border border-app rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <Database size={20} className="text-indigo-500" />
+                <h3 className="font-bold text-app-text">Segurança & Backup</h3>
+              </div>
+              <p className="text-sm text-app-text-dim leading-relaxed mb-6">
+                Faça o download completo de todos os seus dados locais ou restaure um backup anterior caso algo dê errado.
+              </p>
+              
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleExportBackup}
+                  disabled={isExporting}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-500/10 text-indigo-500 rounded-xl font-bold text-sm hover:bg-indigo-500 hover:text-white transition-all disabled:opacity-50"
+                >
+                  {isExporting ? <LoadingSpinner size="sm" className="border-indigo-500/30 border-t-indigo-500" /> : <Download size={18} />}
+                  {isExporting ? 'Exportando...' : 'Fazer Backup (JSON)'}
+                </button>
+                
+                <div className="relative">
+                  <input 
+                    type="file" 
+                    accept=".json" 
+                    onChange={handleImportBackup} 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                    disabled={isImporting}
+                  />
+                  <button
+                    type="button"
+                    disabled={isImporting}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-app-bg text-app-text rounded-xl font-bold text-sm hover:bg-app-bg/80 border border-app border-dashed transition-all disabled:opacity-50"
+                  >
+                    {isImporting ? <LoadingSpinner size="sm" className="border-app-text border-t-app-accent" /> : <Upload size={18} />}
+                    {isImporting ? 'Restaurando...' : 'Restaurar Backup'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

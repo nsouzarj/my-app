@@ -12,8 +12,8 @@ foreach ($orgs as $org) {
     echo "Organização: {$org['name']}\n";
     echo "Antecedência configurada na empresa (reminderDays): " . (int)$org['reminderDays'] . " dias\n\n";
 
-    echo "Listando TODAS as contas Planejadas desta empresa...\n";
-    $stmt = $pdo->prepare("SELECT id, description, due_date, status, reminderDays, last_notified_at FROM transactions WHERE organizationId = ? AND status = 'planned'");
+    echo "Listando TODAS as contas Planejadas/Pendentes desta empresa...\n";
+    $stmt = $pdo->prepare("SELECT id, description, due_date, status, reminderDays, last_notified_at FROM transactions WHERE organizationId = ? AND status IN ('planned', 'pending')");
     $stmt->execute([$org['id']]);
     $todas = $stmt->fetchAll();
 
@@ -39,7 +39,7 @@ foreach ($orgs as $org) {
         }
 
         if ($diff < 0) {
-            echo " - 🔴 STATUS: Atrasada (Vencida). Não entra na janela de próximos avisos.\n";
+            echo " - 🔴 STATUS: Atrasada (Vencida). Agora INCLUÍDA nos avisos até ser paga.\n";
         } elseif ($diff <= $antecedencia) {
             echo " - 🟢 STATUS: DENTRO da janela! O Cron DEVERIA pegar essa conta.\n";
         } else {

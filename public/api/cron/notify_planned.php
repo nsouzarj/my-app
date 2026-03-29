@@ -22,39 +22,43 @@ try {
         $defaultDays = (int)$org['reminderDays'];
         
         // 2. Buscar usuários desta organização
-        $stmtUsers = $pdo->prepare("SELECT u.id, u.email, u.fullName 
+        $stmtUsers = $pdo->prepare("SELECT u.id, u.email, u.fullName, u.reminderDays 
                                     FROM users u
                                     JOIN organization_members om ON u.id = om.userId
                                     WHERE om.organizationId = ?");
         $stmtUsers->execute([$orgId]);
         $users = $stmtUsers->fetchAll();
         
-        if (empty($users)) continue;
-
-        // 3. Buscar transações planejadas no prazo
-        $sql = "SELECT t.*, c.name as categoryName 
-                FROM transactions t
-                LEFT JOIN categories c ON t.categoryId = c.id
-                WHERE t.organizationId = ? 
-                AND t.status = 'planned' 
-                AND DATE(t.due_date) >= CURDATE()
-                AND DATE(t.due_date) <= DATE_ADD(CURDATE(), INTERVAL COALESCE(t.reminderDays, ?) DAY)
-                ORDER BY t.due_date ASC";
-                
-        $stmtT = $pdo->prepare($sql);
-        $stmtT->execute([$orgId, $defaultDays]);
-        $upcoming = $stmtT->fetchAll();
-        
-        if (empty($upcoming)) {
-            echo "Org {$org['name']}: Nenhuma conta atingindo o prazo de aviso hoje.\n";
+        if (empty($users)) {
+            echo "Org {$org['name']}: Ignorada (Nenhum usuário vinculado para receber notificações).\n";
             continue;
         }
 
-        echo "Org {$org['name']}: Encontrada(s) " . count($upcoming) . " conta(s).\n";
-
-        // 4. Processar cada usuário
+        // 3. Processar cada usuário com sua própria preferência de prazo
         foreach ($users as $user) {
             $to = $user['email'];
+            $userDays = (int)($user['reminderDays'] ?? $defaultDays);
+            
+            // Buscar transações baseadas na preferência DESTE usuário
+            $sql = "SELECT t.*, c.name as categoryName 
+                    FROM transactions t
+                    LEFT JOIN categories c ON t.categoryId = c.id
+                    WHERE t.organizationId = ? 
+                    AND t.status IN ('planned', 'pending') 
+                    AND DATE(t.due_date) <= DATE_ADD(CURDATE(), INTERVAL COALESCE(t.reminderDays, ?) DAY)
+                    ORDER BY t.due_date ASC";
+                    
+            $stmtT = $pdo->prepare($sql);
+            $stmtT->execute([$orgId, $userDays]);
+            $upcoming = $stmtT->fetchAll();
+
+            if (empty($upcoming)) {
+                echo "Org {$org['name']} / User {$user['id']}: Nenhuma conta no prazo de aviso ({$userDays} dias).\n";
+                continue;
+            }
+
+            echo "Org {$org['name']} / User {$user['id']}: Encontrada(s) " . count($upcoming) . " conta(s) (Prazo: {$userDays} dias).\n";
+
             $subject = "💳 Lembrete de Conta Planejada - {$org['name']}";
             
             // Montar mensagem
@@ -65,7 +69,10 @@ try {
             foreach ($upcoming as $tx) {
                 $venc = date('d/m/Y', strtotime($tx['due_date']));
                 $valor = "R$ " . number_format($tx['amount'], 2, ',', '.');
-                $msg .= "• {$tx['description']} (" . ($tx['categoryName'] ?? 'Geral') . ")\n";
+                $isOverdue = (strtotime($tx['due_date']) < strtotime(date('Y-m-d')));
+                $prefix = $isOverdue ? "⚠️ ATRASADA: " : "• ";
+                
+                $msg .= "{$prefix}{$tx['description']} (" . ($tx['categoryName'] ?? 'Geral') . ")\n";
                 $msg .= "  Vencimento: {$venc}\n";
                 $msg .= "  Valor: {$valor}\n\n";
             }
@@ -97,9 +104,19 @@ try {
                 $vapidPrivate = 'CYllZK74wn60VZ4sJha8uBE_60enORVIH5KDPzdWjXU';
                 $pushSender = new WebPushPuro($vapidPublic, $vapidPrivate);
                 
+                $pushTitle = "Lembrete: " . $org['name'] . " 💰";
+                $count = count($upcoming);
+                
+                if ($count === 1) {
+                    $pushBody = "Conta: " . $upcoming[0]['description'];
+                } else {
+                    $descriptions = array_slice(array_column($upcoming, 'description'), 0, 2);
+                    $pushBody = "Você tem $count contas: " . implode(', ', $descriptions) . "...";
+                }
+
                 $payload = [
-                    'title' => 'Lembrete de Pagamento 💰',
-                    'body' => (count($upcoming) == 1 ? "Conta: " . $upcoming[0]['description'] : "Você tem " . count($upcoming) . " contas para pagar."),
+                    'title' => $pushTitle,
+                    'body' => $pushBody,
                     'url' => '/financas/planning'
                 ];
 
@@ -112,15 +129,14 @@ try {
                     }
                 }
             }
-        }
 
-        // 5. Atualizar last_notified_at (Apenas para log de auditoria, não bloqueia mais o reenvio diário)
-        $upcIds = array_column($upcoming, 'id');
-        if (!empty($upcIds)) {
-            $placeholders = implode(',', array_fill(0, count($upcIds), '?'));
-            $stmtUpd = $pdo->prepare("UPDATE transactions SET last_notified_at = NOW() WHERE id IN ($placeholders)");
-            $stmtUpd->execute($upcIds);
-            echo "Org {$org['name']}: Log de disparo atualizado.\n";
+            // 4. Atualizar last_notified_at para auditoria
+            $upcIds = array_column($upcoming, 'id');
+            if (!empty($upcIds)) {
+                $placeholders = implode(',', array_fill(0, count($upcIds), '?'));
+                $stmtUpd = $pdo->prepare("UPDATE transactions SET last_notified_at = NOW() WHERE id IN ($placeholders)");
+                $stmtUpd->execute($upcIds);
+            }
         }
     }
     

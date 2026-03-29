@@ -1,0 +1,128 @@
+﻿{
+    "accounts": [
+        {
+            "id": "2925d608b053cc5f31ea90e34ec3c30f",
+            "name": "Bradesco",
+            "organizationId": "3c2ecd8cc00085cf291369725a342f5d",
+            "org_name": "Finan\u00e7as Pessoais"
+        },
+        {
+            "id": "4367595d9589777b6a83d1c3b0b4b66f",
+            "name": "Itau",
+            "organizationId": "3c2ecd8cc00085cf291369725a342f5d",
+            "org_name": "Finan\u00e7as Pessoais"
+        },
+        {
+            "id": "79ae214c32f6e383e424ecc716076ff6",
+            "name": "Itau",
+            "organizationId": "0479b7b2cfdce8943eecebdf65d3c1cf",
+            "org_name": "teste"
+        },
+        {
+            "id": "968bbc324da3f81e7a7aeabd55ff3ec3",
+            "name": "Caixa Economica",
+            "organizationId": "3c2ecd8cc00085cf291369725a342f5d",
+            "org_name": "Finan\u00e7as Pessoais"
+        },
+        {
+            "id": "9c8b3930f4b4ee16868ca2fd6ceb8094",
+            "name": "Santander",
+            "organizationId": "3c2ecd8cc00085cf291369725a342f5d",
+            "org_name": "Finan\u00e7as Pessoais"
+        },
+        {
+            "id": "a797ee2f9ea0f98e734158a47d7d628a",
+            "name": "XP",
+            "organizationId": "d583f0137058f67f58611bee12c6cb86",
+            "org_name": "DEMOSTRA\u00c7\u00c3O"
+        },
+        {
+            "id": "c4ea05b9d8d7a09a1889e7e534f10349",
+            "name": "Cartao Credito(Meu)",
+            "organizationId": "d583f0137058f67f58611bee12c6cb86",
+            "org_name": "DEMOSTRA\u00c7\u00c3O"
+        },
+        {
+            "id": "cebca139df4d0dafb543969bfe435901",
+            "name": "Ifood",
+            "organizationId": "3c2ecd8cc00085cf291369725a342f5d",
+            "org_name": "Finan\u00e7as Pessoais"
+        },
+        {
+            "id": "ee8dfec1862a9524ccda991e8adde85c",
+            "name": "Provisao Futura",
+            "organizationId": "3c2ecd8cc00085cf291369725a342f5d",
+            "org_name": "Finan\u00e7as Pessoais"
+        }
+    ],
+    "members": [
+        {
+            "userId": "1ae3347fe823a74279b608501677978a",
+            "email": "nelsonrjbrazil@gmail.com",
+            "organizationId": "d583f0137058f67f58611bee12c6cb86",
+            "org_name": "DEMOSTRA\u00c7\u00c3O"
+        },
+        {
+            "userId": "508994f6072f85d825cd69203f73eb36",
+            "email": "nsouzarj@outlook.com",
+            "organizationId": "3c2ecd8cc00085cf291369725a342f5d",
+            "org_name": "Finan\u00e7as Pessoais"
+        },
+        {
+            "userId": "e04a94ceca7ef690900c6a14f9f0975b",
+            "email": "vitor@teste.com.br",
+            "organizationId": "0479b7b2cfdce8943eecebdf65d3c1cf",
+            "org_name": "teste"
+        },
+        {
+            "userId": "e9065c697a5ff057762e7cb4b5d6ef2a",
+            "email": "nsouzarj@bol.com.br",
+            "organizationId": "530a7ccad3b6e073e6f21944ad8e942b",
+            "org_name": "Contas Fantasmas"
+        }
+    ],
+    "organizations": [
+        {
+            "id": "0479b7b2cfdce8943eecebdf65d3c1cf",
+            "name": "teste"
+        },
+        {
+            "id": "3c2ecd8cc00085cf291369725a342f5d",
+            "name": "Finan\u00e7as Pessoais"
+        },
+        {
+            "id": "530a7ccad3b6e073e6f21944ad8e942b",
+            "name": "Contas Fantasmas"
+        },
+        {
+            "id": "d583f0137058f67f58611bee12c6cb86",
+            "name": "DEMOSTRA\u00c7\u00c3O"
+        },
+        {
+            "id": "user_3ApEYwE56glKLAGxzs0i70xK36F",
+            "name": "Finan\u00e7as"
+        }
+    ],
+    "users": [
+        {
+            "id": "1ae3347fe823a74279b608501677978a",
+            "email": "nelsonrjbrazil@gmail.com",
+            "fullName": "Conta Teste"
+        },
+        {
+            "id": "508994f6072f85d825cd69203f73eb36",
+            "email": "nsouzarj@outlook.com",
+            "fullName": "Nelson Seixas de Souza"
+        },
+        {
+            "id": "e04a94ceca7ef690900c6a14f9f0975b",
+            "email": "vitor@teste.com.br",
+            "fullName": "Vitor"
+        },
+        {
+            "id": "e9065c697a5ff057762e7cb4b5d6ef2a",
+            "email": "nsouzarj@bol.com.br",
+            "fullName": "Nelson  Break"
+        }
+    ]
+}
