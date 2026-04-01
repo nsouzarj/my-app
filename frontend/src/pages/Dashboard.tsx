@@ -353,7 +353,7 @@ export default function Dashboard() {
                 <h3 className="text-lg font-bold text-app-text">
                   {summary.pendingBills.overdueCount > 0 
                     ? `${summary.pendingBills.overdueCount} Contas Atrasadas!` 
-                    : `${summary.pendingBills.count} Contas Pendentes`}
+                    : `${summary.pendingBills.count} Contas a Pagar`}
                 </h3>
                 <p className="text-sm text-app-text-dim">
                   Total a pagar: <span className="font-bold text-app-text">

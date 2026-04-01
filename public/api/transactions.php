@@ -65,9 +65,20 @@ if ($method === 'GET') {
     }
 
     $statusFilter = $_GET['statusFilter'] ?? 'all';
-    if ($statusFilter === 'paid' || $statusFilter === 'pending' || $statusFilter === 'planned') {
-        $sql .= " AND t.status = ?";
-        $params[] = $statusFilter;
+    $allowedStatuses = ['paid', 'pending', 'planned'];
+    if ($statusFilter !== 'all') {
+        // Suporte a múltiplos status separados por vírgula (ex: "paid,pending")
+        $requestedStatuses = array_filter(
+            array_map('trim', explode(',', $statusFilter)),
+            fn($s) => in_array($s, $allowedStatuses)
+        );
+        if (!empty($requestedStatuses)) {
+            $placeholders = implode(',', array_fill(0, count($requestedStatuses), '?'));
+            $sql .= " AND t.status IN ($placeholders)";
+            foreach ($requestedStatuses as $s) {
+                $params[] = $s;
+            }
+        }
     } else {
         // Por padrão (all), não mostramos as planejadas para manter o extrato limpo
         $sql .= " AND (t.status = 'paid' OR t.status = 'pending')";

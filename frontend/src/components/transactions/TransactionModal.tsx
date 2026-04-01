@@ -382,8 +382,8 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
                         className="w-full bg-app border border-app rounded-xl px-4 py-2.5 text-xs text-app-text font-bold outline-none cursor-pointer"
                       >
                         <option value="paid">✅ Pago</option>
-                        <option value="pending">⏳ Pendente</option>
-                        <option value="planned">📅 Planejada (Não abate saldo)</option>
+                        <option value="pending">⏳ A Pagar</option>
+                        <option value="planned">📅 Planejado (Não abate saldo)</option>
                       </select>
                   </div>
                 </div>

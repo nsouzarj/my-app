@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
@@ -31,7 +31,7 @@ interface Transaction {
 export default function Transactions() {
   const { organization } = useAuth()
   const [searchParams] = useSearchParams()
-  const initialStatus = searchParams.get('status') as 'all' | 'paid' | 'pending' | 'planned' || 'all'
+  const initialStatus = searchParams.get('status') as 'paid' | 'pending' | 'planned' | null
   
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -44,9 +44,13 @@ export default function Transactions() {
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending' | 'planned'>(initialStatus)
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(
+    initialStatus ? new Set([initialStatus]) : new Set(['paid', 'pending', 'planned'])
+  )
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set())
   const [showCategoryMenu, setShowCategoryMenu] = useState(false)
+  const [showStatusMenu, setShowStatusMenu] = useState(false)
+  const statusMenuRef = useRef<HTMLDivElement>(null)
   const [accountIdFilter, setAccountIdFilter] = useState('all')
   const [accounts, setAccounts] = useState<any[]>([])
 
@@ -54,23 +58,63 @@ export default function Transactions() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [confirmPay, setConfirmPay] = useState<Transaction | null>(null)
 
+  // Close status menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setShowStatusMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   useEffect(() => {
     if (organization) {
       fetchData()
     }
-  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, statusFilter, accountIdFilter])
+  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, selectedStatuses, accountIdFilter])
+
+  function toggleStatus(status: string) {
+    setSelectedStatuses(prev => {
+      const next = new Set(prev)
+      if (next.has(status)) {
+        if (next.size === 1) return prev // keep at least one
+        next.delete(status)
+      } else {
+        next.add(status)
+      }
+      return next
+    })
+  }
+
+  const allStatuses = ['paid', 'pending', 'planned']
+  const allSelected = allStatuses.every(s => selectedStatuses.has(s))
+
+  const statusLabels: Record<string, string> = {
+    paid: '✅ Pago',
+    pending: '⏳ A Pagar',
+    planned: '📅 Planejado',
+  }
+
+  function getStatusButtonLabel() {
+    if (allSelected) return 'Status: Todos'
+    return `Status: ${[...selectedStatuses].map(s => statusLabels[s].split(' ')[1]).join(', ')}`
+  }
 
   async function fetchData() {
     try {
       setIsLoading(true)
+      // If A Pagar (pending) is selected, expand date range to show all pending regardless of month
+      const hasPending = selectedStatuses.has('pending')
       const params: any = { 
         organizationId: organization.organizationId,
-        startDate: (statusFilter === 'pending' || !selectedDate) ? '2000-01-01' : format(startOfMonth(selectedDate), 'yyyy-MM-dd'),
-        endDate: (statusFilter === 'pending' || !selectedDate) ? '2100-12-31' : format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
+        startDate: (hasPending || !selectedDate) ? '2000-01-01' : format(startOfMonth(selectedDate), 'yyyy-MM-dd'),
+        endDate: (hasPending || !selectedDate) ? '2100-12-31' : format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
         sortBy,
         order: sortOrder,
         type: typeFilter,
-        statusFilter: statusFilter
+        statusFilter: allSelected ? 'all' : [...selectedStatuses].join(',')
       }
       if (accountIdFilter !== 'all') {
         params.accountId = accountIdFilter;
@@ -250,16 +294,52 @@ export default function Transactions() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-1">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="bg-app-card text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all flex-1 sm:max-w-40"
-              >
-                <option value="all">Status: Todos</option>
-                <option value="paid">✅ Pagos</option>
-                <option value="pending">⏳ Pendentes</option>
-                <option value="planned">📅 Planejados</option>
-              </select>
+              {/* Status Multi-Select */}
+              <div className="relative flex-1 sm:max-w-48" ref={statusMenuRef}>
+                <button
+                  onClick={() => setShowStatusMenu(!showStatusMenu)}
+                  className="w-full bg-app-card text-xs font-bold text-app-text-dim hover:text-app-text outline-none px-3 py-1.5 rounded-lg border border-app cursor-pointer transition-all text-left flex justify-between items-center gap-2"
+                >
+                  <span className="truncate">{getStatusButtonLabel()}</span>
+                  <span className="text-[8px] shrink-0">▼</span>
+                </button>
+                {showStatusMenu && (
+                  <div className="absolute top-full mt-2 left-0 w-52 bg-app-card border border-app rounded-xl shadow-2xl z-50 overflow-hidden">
+                    <div className="p-2 border-b border-app bg-app-soft/30">
+                      <label className="flex items-center gap-2 text-xs font-bold text-app-text cursor-pointer hover:bg-app-soft px-2 py-1.5 rounded-lg transition-all">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          ref={(el) => { if (el) el.indeterminate = !allSelected && selectedStatuses.size > 0; }}
+                          onChange={() => {
+                            if (allSelected) {
+                              setSelectedStatuses(new Set(['paid']))
+                            } else {
+                              setSelectedStatuses(new Set(allStatuses))
+                            }
+                          }}
+                          className="accent-app-text cursor-pointer w-4 h-4 rounded"
+                        />
+                        <span>Todos os Status</span>
+                      </label>
+                    </div>
+                    <div className="p-2 flex flex-col gap-1">
+                      {allStatuses.map(s => (
+                        <label key={s} className="flex items-center gap-2 text-xs font-bold text-app-text-dim hover:text-app-text cursor-pointer hover:bg-app-soft px-2 py-2 rounded-lg transition-all">
+                          <input
+                            type="checkbox"
+                            checked={selectedStatuses.has(s)}
+                            onChange={() => toggleStatus(s)}
+                            className="accent-app-text cursor-pointer w-4 h-4 rounded"
+                          />
+                          <span>{statusLabels[s]}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               
               <select
                 value={accountIdFilter}
@@ -405,8 +485,8 @@ export default function Transactions() {
                                 (new Date(tx.due_date) < new Date() ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500")
                               )}>
                                 {tx.status === 'paid' ? 'Pago' : 
-                                 (tx.status === 'planned' ? 'Planejada' : 
-                                 (new Date(tx.due_date!) < new Date() ? 'Atrasado' : 'Pendente'))}
+                                 (tx.status === 'planned' ? 'Planejado' : 
+                                 (new Date(tx.due_date!) < new Date() ? 'Atrasado' : 'A Pagar'))}
                               </span>
                               <span className="text-[10px] text-app-text-dim font-bold">
                                 Vence {formatDate(tx.due_date)}
@@ -512,9 +592,9 @@ export default function Transactions() {
                         tx.status === 'paid' ? "bg-emerald-500/10 text-emerald-500" : 
                         (new Date(tx.due_date) < new Date() ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-500")
                       )}>
-                        {tx.status === 'paid' ? 'Pago' : 
-                         (tx.status === 'planned' ? 'Planejada' : 
-                         (new Date(tx.due_date!) < new Date() ? 'Atrasado' : 'Pendente'))}
+                         {tx.status === 'paid' ? 'Pago' : 
+                          (tx.status === 'planned' ? 'Planejado' : 
+                          (new Date(tx.due_date!) < new Date() ? 'Atrasado' : 'A Pagar'))}
                       </span>
                     </div>
                   )}

@@ -85,6 +85,8 @@ class WebPushPuro {
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);        // máx 10s de espera total
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  // máx 5s para conectar
         
         $result = curl_exec($ch);
         $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
