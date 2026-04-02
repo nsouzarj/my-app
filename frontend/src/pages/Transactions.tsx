@@ -105,16 +105,14 @@ export default function Transactions() {
   async function fetchData() {
     try {
       setIsLoading(true)
-      // If A Pagar (pending) is selected, expand date range to show all pending regardless of month
-      const hasPending = selectedStatuses.has('pending')
       const params: any = { 
         organizationId: organization.organizationId,
-        startDate: (hasPending || !selectedDate) ? '2000-01-01' : format(startOfMonth(selectedDate), 'yyyy-MM-dd'),
-        endDate: (hasPending || !selectedDate) ? '2100-12-31' : format(endOfMonth(selectedDate), 'yyyy-MM-dd'),
+        startDate: selectedDate ? format(startOfMonth(selectedDate), 'yyyy-MM-dd') : '2000-01-01',
+        endDate: selectedDate ? format(endOfMonth(selectedDate), 'yyyy-MM-dd') : '2100-12-31',
         sortBy,
         order: sortOrder,
         type: typeFilter,
-        statusFilter: allSelected ? 'all' : [...selectedStatuses].join(',')
+        statusFilter: [...selectedStatuses].join(',')
       }
       if (accountIdFilter !== 'all') {
         params.accountId = accountIdFilter;

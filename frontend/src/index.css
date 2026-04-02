@@ -92,6 +92,7 @@
 
 /* Modern Premium: Cyber-Pool (Vibrant Brutalist) */
 .skin-cyberpool {
+  color-scheme: light;
   --bg-color: #00e5ff;
   --card-color: #ffffff;
   --bg-soft: #00d2eb;
@@ -102,6 +103,7 @@
   --accent-income: #10b981;
   --accent-expense: #ef4444;
   --primary-color-override: #ff5f00; /* For action bits */
+  --checkbox-accent: #ff5f00; /* Vibrant accent for checkboxes */
 }
 
 /* Modern Premium: Nordic Shore (Frost) */
@@ -254,6 +256,11 @@ body {
 .bg-app-soft { background-color: var(--bg-soft); }
 .border-app { border-color: var(--border-color); }
 .text-primary-skin { color: var(--primary-color); }
+
+/* Native input accent color — ensures checkboxes show correct state on mobile */
+input[type="checkbox"] {
+  accent-color: var(--checkbox-accent, var(--primary-color));
+}
 
 /* Print Styles */
 @media print {

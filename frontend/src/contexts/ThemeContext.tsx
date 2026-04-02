@@ -31,7 +31,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Update color-scheme at root
-    html.style.colorScheme = (skinToApply === 'light') ? 'light' : 'dark';
+    // Light themes: light color-scheme so native browser inputs (checkboxes, selects) render correctly on mobile
+    const lightThemes = ['light', 'snow', 'solar', 'rose', 'mint', 'sky', 'sand', 'cyberpool'];
+    html.style.colorScheme = lightThemes.includes(skinToApply) ? 'light' : 'dark';
     
     // Remove all existing skin classes
     const allSkins = ['skin-midnight', 'skin-emerald', 'skin-ocean', 'skin-slate', 'skin-gold', 'skin-light', 'skin-cyberpool', 'skin-nordic', 'skin-velvet', 'skin-forest', 'skin-snow', 'skin-solar', 'skin-rose', 'skin-mint', 'skin-sky', 'skin-sand'];
