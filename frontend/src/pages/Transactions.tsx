@@ -32,6 +32,7 @@ export default function Transactions() {
   const { organization } = useAuth()
   const [searchParams] = useSearchParams()
   const initialStatus = searchParams.get('status') as 'paid' | 'pending' | 'planned' | null
+  const initialDateStr = searchParams.get('date')
   
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -40,7 +41,9 @@ export default function Transactions() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   
   // Filters & Sorting State
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    initialDateStr ? new Date(`${initialDateStr}T12:00:00`) : new Date()
+  )
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')

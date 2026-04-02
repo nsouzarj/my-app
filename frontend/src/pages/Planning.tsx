@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -37,7 +38,11 @@ export default function Planning() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
+  const [searchParams] = useSearchParams()
+  const initialDateStr = searchParams.get('date')
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    initialDateStr ? new Date(`${initialDateStr}T12:00:00`) : new Date()
+  )
   const sortBy = 'date'
   const sortOrder = 'ASC'
   const typeFilter = 'all'
@@ -149,7 +154,7 @@ export default function Planning() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-app bg-app-soft/20">
-                        <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Data Prevista</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Vencimento</th>
                         <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Descrição</th>
                         <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest">Categoria</th>
                         <th className="px-4 py-3 text-[10px] font-black text-app-text-dim uppercase tracking-widest text-right">Valor</th>
@@ -164,7 +169,7 @@ export default function Planning() {
                       ) : (
                         transactions.map(tx => (
                           <tr key={tx.id} className="hover:bg-app-soft/10 transition-colors group">
-                            <td className="px-4 py-3 text-sm font-bold text-app-text-dim">{formatDate(tx.date)}</td>
+                            <td className="px-4 py-3 text-sm font-bold text-app-text-dim">{formatDate(tx.due_date || tx.date)}</td>
                             <td className="px-4 py-3">
                               <span className="text-sm font-black text-app-text block">{tx.description}</span>
                               {tx.reminderDays && (
@@ -212,7 +217,7 @@ export default function Planning() {
                       <div key={tx.id} className="p-5 space-y-4 hover:bg-app-soft/10 transition-colors">
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-app-text-dim uppercase tracking-widest">{formatDate(tx.date)}</span>
+                            <span className="text-[10px] font-black text-app-text-dim uppercase tracking-widest">Venc: {formatDate(tx.due_date || tx.date)}</span>
                             <h4 className="text-base font-black text-app-text">{tx.description}</h4>
                             <div className="flex items-center gap-2 text-[10px] text-app-text-dim uppercase font-black tracking-widest">
                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: categories.find(c => c.id === tx.categoryId)?.color }}></span>

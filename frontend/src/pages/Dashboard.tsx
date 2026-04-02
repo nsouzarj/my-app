@@ -192,7 +192,7 @@ export default function Dashboard() {
                   <p className="text-[10px] text-app-text-dim font-black uppercase tracking-widest">Lançamentos previstos para os próximos dias</p>
                 </div>
               </div>
-              <Link to="/planning" className="text-xs font-black text-indigo-500 hover:underline uppercase tracking-widest px-4 py-2 bg-indigo-500/10 rounded-xl transition-all">
+              <Link to={`/planning?date=${filterMonth}-01`} className="text-xs font-black text-indigo-500 hover:underline uppercase tracking-widest px-4 py-2 bg-indigo-500/10 rounded-xl transition-all">
                 Ver Planejamento
               </Link>
             </div>
@@ -209,7 +209,7 @@ export default function Dashboard() {
                         <span className="text-[10px] font-black text-indigo-500">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(alert.amount)}</span>
                       </div>
                     </div>
-                    <Link to="/planning" className="w-10 h-10 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 active:scale-90 transition-all opacity-0 group-hover:opacity-100">
+                    <Link to={`/planning?date=${alert.date}`} className="w-10 h-10 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 active:scale-90 transition-all opacity-0 group-hover:opacity-100">
                       <ArrowRight size={18} />
                     </Link>
                   </div>
@@ -363,7 +363,7 @@ export default function Dashboard() {
               </div>
             </div>
             <Link 
-              to="/transactions?status=pending" 
+              to={`/transactions?status=pending&date=${filterMonth}-01`} 
               className={cn(
                 "px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2",
                 summary.pendingBills.overdueCount > 0 ? "bg-rose-500 text-white hover:bg-rose-600" : "bg-amber-500 text-white hover:bg-amber-600"
