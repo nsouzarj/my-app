@@ -44,6 +44,7 @@ export default function Transactions() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(
     initialDateStr ? new Date(`${initialDateStr}T12:00:00`) : new Date()
   )
+  const [dayFilter, setDayFilter] = useState<string>('')
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
@@ -76,7 +77,7 @@ export default function Transactions() {
     if (organization) {
       fetchData()
     }
-  }, [organization, selectedDate, sortBy, sortOrder, typeFilter, selectedStatuses, accountIdFilter])
+  }, [organization, selectedDate, dayFilter, sortBy, sortOrder, typeFilter, selectedStatuses, accountIdFilter])
 
   function toggleStatus(status: string) {
     setSelectedStatuses(prev => {
@@ -108,10 +109,22 @@ export default function Transactions() {
   async function fetchData() {
     try {
       setIsLoading(true)
+      
+      let startDate = selectedDate ? format(startOfMonth(selectedDate), 'yyyy-MM-dd') : '2000-01-01'
+      let endDate = selectedDate ? format(endOfMonth(selectedDate), 'yyyy-MM-dd') : '2100-12-31'
+
+      // Se houver um filtro de dia e um mês selecionado, filtra por esse dia exato
+      if (dayFilter && selectedDate) {
+        const day = dayFilter.padStart(2, '0')
+        const monthYear = format(selectedDate, 'yyyy-MM')
+        startDate = `${monthYear}-${day}`
+        endDate = `${monthYear}-${day}`
+      }
+
       const params: any = { 
         organizationId: organization.organizationId,
-        startDate: selectedDate ? format(startOfMonth(selectedDate), 'yyyy-MM-dd') : '2000-01-01',
-        endDate: selectedDate ? format(endOfMonth(selectedDate), 'yyyy-MM-dd') : '2100-12-31',
+        startDate,
+        endDate,
         sortBy,
         order: sortOrder,
         type: typeFilter,
@@ -224,8 +237,31 @@ export default function Transactions() {
           {/* Top Row: Date and Totals */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full">
-              <div className="w-full sm:w-auto [&>div]:w-full [&>div]:justify-between">
-                <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
+              <div className="flex items-center gap-2">
+                <div className="w-full sm:w-auto [&>div]:w-full [&>div]:justify-between">
+                  <DateFilter currentDate={selectedDate} onDateChange={setSelectedDate} />
+                </div>
+                
+                <div className="relative group">
+                  <input 
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="Dia"
+                    value={dayFilter}
+                    onChange={(e) => setDayFilter(e.target.value)}
+                    className="w-16 h-11 bg-app-card border border-app rounded-xl px-2 text-center text-sm font-black text-app-text outline-none focus:border-app-text transition-all placeholder:text-app-text-dim/50 shadow-sm"
+                    title="Filtrar por dia específico do mês"
+                  />
+                  {dayFilter && (
+                    <button 
+                      onClick={() => setDayFilter('')}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-app-text text-app-bg rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg hover:scale-110 transition-transform"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="h-8 w-px bg-app-soft hidden sm:block"></div>
               

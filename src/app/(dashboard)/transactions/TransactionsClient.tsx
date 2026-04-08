@@ -168,6 +168,7 @@ export const TransactionsClient: React.FC<TransactionsClientProps> = ({
         
         if (filters.startDate && transDate < filters.startDate) return false;
         if (filters.endDate && transDate > filters.endDate) return false;
+        
         if (filters.accountId !== 'all' && t.accountId !== filters.accountId) return false;
         if (filters.type !== 'all' && t.type !== filters.type) return false;
         
@@ -252,7 +253,7 @@ export const TransactionsClient: React.FC<TransactionsClientProps> = ({
                     <span>Filtros Avançados</span>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     {/* Period */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Período</label>
@@ -262,6 +263,8 @@ export const TransactionsClient: React.FC<TransactionsClientProps> = ({
                                 value={filters.startDate}
                                 onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
                                 className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-zinc-950 dark:focus:ring-zinc-50 transition-all outline-none"
+                                title="Data Inicial"
+                                placeholder="dd/mm/aaaa"
                             />
                             <span className="text-zinc-400">a</span>
                             <input 
@@ -269,9 +272,12 @@ export const TransactionsClient: React.FC<TransactionsClientProps> = ({
                                 value={filters.endDate}
                                 onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
                                 className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 focus:ring-zinc-950 dark:focus:ring-zinc-50 transition-all outline-none"
+                                title="Data Final"
+                                placeholder="dd/mm/aaaa"
                             />
                         </div>
                     </div>
+
 
                     {/* Account */}
                     <div className="space-y-1.5">
