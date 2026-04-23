@@ -10,6 +10,7 @@ import { startOfMonth, endOfMonth, format } from 'date-fns'
 import { DateFilter } from '../components/ui/DateFilter'
 import { formatDate, cn } from '../lib/utils'
 import { DateInput } from '../components/ui/DateInput'
+import { maskCurrency, parseCurrencyToNumber, formatCurrency } from '../lib/currencyUtils'
 
 interface Account {
   id: string
@@ -67,7 +68,7 @@ export default function Accounts() {
   // Income Entry State
   const [isIncomeDrawerOpen, setIsIncomeDrawerOpen] = useState(false)
   const [targetAccount, setTargetAccount] = useState<Account | null>(null)
-  const [incomeAmount, setIncomeAmount] = useState('')
+  const [incomeAmount, setIncomeAmount] = useState('0,00')
   const [incomeDescription, setIncomeDescription] = useState('Recebimento de Salário')
   const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split('T')[0])
   const [incomeCategoryId, setIncomeCategoryId] = useState('')
@@ -88,7 +89,7 @@ export default function Accounts() {
   const [isTransferDrawerOpen, setIsTransferDrawerOpen] = useState(false)
   const [transferOriginId, setTransferOriginId] = useState('')
   const [transferDestinationId, setTransferDestinationId] = useState('')
-  const [transferAmount, setTransferAmount] = useState('')
+  const [transferAmount, setTransferAmount] = useState('0,00')
   const [transferDate, setTransferDate] = useState(new Date().toISOString().split('T')[0])
   const [transferDesc, setTransferDesc] = useState('Transferência')
 
@@ -152,7 +153,7 @@ export default function Accounts() {
     setType(accountTypes.length > 0 ? accountTypes[0].id : '')
     setBalance('0,00')
     setSelectedColor(ACCOUNT_COLORS[Math.floor(Math.random() * ACCOUNT_COLORS.length)])
-    setCreditLimit('')
+    setCreditLimit('0,00')
     setClosingDay('')
     setDueDay('')
     setIsDrawerOpen(true)
@@ -162,9 +163,9 @@ export default function Accounts() {
     setEditingAccount(account)
     setName(account.name)
     setType(account.type)
-    setBalance(Number(account.balance).toFixed(2).replace('.', ','))
+    setBalance(formatCurrency(account.balance))
     setSelectedColor(account.color || ACCOUNT_COLORS[0])
-    setCreditLimit(account.creditLimit ? Number(account.creditLimit).toFixed(2).replace('.', ',') : '')
+    setCreditLimit(account.creditLimit ? formatCurrency(account.creditLimit) : '0,00')
     setClosingDay(account.closingDay ? account.closingDay.toString() : '')
     setDueDay(account.dueDay ? account.dueDay.toString() : '')
     setIsDrawerOpen(true)
@@ -172,8 +173,17 @@ export default function Accounts() {
 
   function handleOpenIncome(account: Account) {
     setTargetAccount(account)
-    setIncomeAmount('')
+    setIncomeAmount('0,00')
+    setIncomeDate(new Date().toISOString().split('T')[0])
     setIsIncomeDrawerOpen(true)
+  }
+
+  function openTransferDrawer(originAccount?: Account) {
+    setTransferOriginId(originAccount?.id || '')
+    setTransferDestinationId('')
+    setTransferAmount('0,00')
+    setTransferDesc('Transferência entre contas')
+    setIsTransferDrawerOpen(true)
   }
 
   async function fetchStatement(accountId: string) {
@@ -216,13 +226,9 @@ export default function Accounts() {
   async function handleIncomeSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!targetAccount || !incomeAmount) return
-
-    // Normalizar valor: Remove pontos de milhar, troca vírgula por ponto
-    const cleanAmount = incomeAmount.replace(/\./g, '').replace(',', '.')
-    const normalizedAmount = parseFloat(cleanAmount)
-
-    if (isNaN(normalizedAmount)) {
-      toast.error('Valor inválido. Por favor, use o formato 1234,56')
+    const normalizedAmount = parseCurrencyToNumber(incomeAmount)
+    if (normalizedAmount <= 0) {
+      toast.error('Valor inválido.')
       return
     }
 
@@ -253,10 +259,9 @@ export default function Accounts() {
       return
     }
 
-    const cleanAmount = transferAmount.replace(/\./g, '').replace(',', '.')
-    const normalizedAmount = parseFloat(cleanAmount)
+    const normalizedAmount = parseCurrencyToNumber(transferAmount)
 
-    if (isNaN(normalizedAmount) || normalizedAmount <= 0) {
+    if (normalizedAmount <= 0) {
       toast.error('Valor inválido.')
       return
     }
@@ -275,7 +280,7 @@ export default function Accounts() {
       setIsTransferDrawerOpen(false)
       
       // Reset transfer form
-      setTransferAmount('')
+      setTransferAmount('0,00')
       setTransferOriginId('')
       setTransferDestinationId('')
       
@@ -293,14 +298,12 @@ export default function Accounts() {
   async function performSave() {
     setIsConfirmSaveOpen(false)
     try {
-      const cleanBalance = String(balance).replace(/\./g, '').replace(',', '.')
-      const cleanLimit = String(creditLimit).replace(/\./g, '').replace(',', '.')
       const payload = {
         name,
         type,
-        balance: parseFloat(cleanBalance),
+        balance: parseCurrencyToNumber(balance),
         color: selectedColor,
-        creditLimit: cleanLimit ? parseFloat(cleanLimit) : null,
+        creditLimit: creditLimit ? parseCurrencyToNumber(creditLimit) : null,
         closingDay: closingDay ? parseInt(closingDay) : null,
         dueDay: dueDay ? parseInt(dueDay) : null,
         organizationId: organization.organizationId
@@ -377,7 +380,7 @@ export default function Accounts() {
           </div>
           <div className="flex gap-2">
             <button 
-              onClick={() => setIsTransferDrawerOpen(true)}
+              onClick={() => openTransferDrawer()}
               className="flex items-center gap-2 bg-app-accent/10 border border-app-accent/20 text-app-accent px-5 py-2.5 rounded-xl font-bold hover:bg-app-accent hover:text-app-bg transition-all shadow-lg text-sm"
             >
               <ArrowRightLeft className="w-4 h-4" />
@@ -615,13 +618,13 @@ export default function Accounts() {
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
                   <input 
                     type="text"
-                    inputMode="decimal"
+                    inputMode="numeric"
                     required
                     autoFocus
                     value={incomeAmount}
-                    onChange={e => setIncomeAmount(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
-                    placeholder="2.500,00"
-                    className="w-full bg-app-bg border border-app rounded-xl pl-12 pr-4 py-4 text-app-text text-2xl font-black focus:ring-2 focus:ring-app-accent outline-none shadow-inner"
+                    onChange={e => setIncomeAmount(maskCurrency(e.target.value))}
+                    placeholder="0,00"
+                    className="w-full bg-app-bg border border-app rounded-xl pl-12 pr-4 py-4 text-app-text text-2xl font-black focus:ring-2 focus:ring-app-accent outline-none shadow-inner tabular-nums"
                   />
                 </div>
               </div>
@@ -732,12 +735,12 @@ export default function Accounts() {
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
                   <input 
                     type="text"
-                    inputMode="decimal"
+                    inputMode="numeric"
                     required
                     value={transferAmount}
-                    onChange={e => setTransferAmount(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
-                    placeholder="100,00"
-                    className="w-full bg-app-bg border border-app rounded-xl pl-12 pr-4 py-4 text-app-text text-xl font-black focus:ring-2 focus:ring-app-accent outline-none shadow-inner"
+                    onChange={e => setTransferAmount(maskCurrency(e.target.value))}
+                    placeholder="0,00"
+                    className="w-full bg-app-bg border border-app rounded-xl pl-12 pr-4 py-4 text-app-text text-xl font-black focus:ring-2 focus:ring-app-accent outline-none shadow-inner font-mono tabular-nums"
                   />
                 </div>
               </div>
@@ -828,14 +831,17 @@ export default function Accounts() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-l-2 border-app-accent pl-4 py-2 opacity-90">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-app-text-dim">Limite</label>
-                    <input 
-                      type="text"
-                      inputMode="decimal"
-                      value={creditLimit}
-                      onChange={e => setCreditLimit(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
-                      placeholder="5.000,00"
-                      className="w-full bg-app-bg border border-app rounded-xl px-3 py-2 text-sm text-app-text focus:ring-2 focus:ring-app-accent outline-none"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-app-text-dim font-bold text-xs">R$</span>
+                      <input 
+                        type="text"
+                        inputMode="numeric"
+                        value={creditLimit}
+                        onChange={e => setCreditLimit(maskCurrency(e.target.value))}
+                        placeholder="0,00"
+                        className="w-full bg-app-bg border border-app rounded-xl pl-8 pr-3 py-2 text-sm text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono tabular-nums"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-app-text-dim">Dia Fechamento</label>
@@ -864,14 +870,17 @@ export default function Accounts() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-app-text-dim">Saldo Inicial (Manual)</label>
-                <input 
-                  type="text"
-                  inputMode="decimal"
-                  required
-                  value={balance}
-                  onChange={e => setBalance(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
-                  className="w-full bg-app-bg border border-app rounded-xl px-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono"
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
+                  <input 
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={balance}
+                    onChange={e => setBalance(maskCurrency(e.target.value))}
+                    className="w-full bg-app-bg border border-app rounded-xl pl-10 pr-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono tabular-nums"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

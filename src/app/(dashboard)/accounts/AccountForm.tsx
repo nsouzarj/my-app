@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Wallet, CreditCard, PiggyBank } from 'lucide-react';
 import { Account } from '@/domain/entities/Account';
+import { maskCurrency, parseCurrencyToNumber, formatCurrency } from '@/infrastructure/utils/currencyUtils';
 
 interface AccountFormProps {
     initialData?: any;
@@ -14,13 +15,13 @@ interface AccountFormProps {
 export const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit, onClose, isLoading }) => {
     const [name, setName] = useState(initialData?.name || '');
     const [type, setType] = useState<Account['type']>(initialData?.type || 'Checking');
-    const [balance, setBalance] = useState(initialData?.balance?.toString() || '0');
+    const [balance, setBalance] = useState(initialData?.balance ? formatCurrency(initialData.balance) : '0,00');
 
     useEffect(() => {
         if (initialData) {
             setName(initialData.name || '');
             setType(initialData.type || 'Checking');
-            setBalance(initialData.balance?.toString() || '0');
+            setBalance(initialData.balance ? formatCurrency(initialData.balance) : '0,00');
         }
     }, [initialData]);
 
@@ -29,7 +30,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit,
         onSubmit({ 
             name, 
             type, 
-            balance: parseFloat(balance.replace(',', '.')) 
+            balance: parseCurrencyToNumber(balance) 
         });
     };
 
@@ -88,7 +89,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ initialData, onSubmit,
                     <input 
                         type="text"
                         value={balance}
-                        onChange={(e) => setBalance(e.target.value)}
+                        onChange={(e) => setBalance(maskCurrency(e.target.value))}
                         placeholder="0,00"
                         className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-black dark:focus:ring-white outline-none transition-all text-2xl font-bold font-mono"
                     />

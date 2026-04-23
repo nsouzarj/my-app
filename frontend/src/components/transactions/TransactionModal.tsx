@@ -7,6 +7,7 @@ import { toast } from '../ui/Toast';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { DateInput } from '../ui/DateInput';
 import { cn } from '../../lib/utils';
+import { maskCurrency, parseCurrencyToNumber, formatCurrency } from '../../lib/currencyUtils';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -82,7 +83,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
 
   function populateForm(tx: any) {
     setDescription(tx.description);
-    setAmount(tx.amount.toFixed(2).replace('.', ','));
+    setAmount(formatCurrency(tx.amount));
     setDate(new Date(tx.date).toISOString().split('T')[0]);
     const normalizedType = tx.type.charAt(0).toUpperCase() + tx.type.slice(1).toLowerCase() as 'Income' | 'Expense';
     setType(normalizedType);
@@ -116,10 +117,10 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
 
     try {
       setIsLoading(true);
-      const cleanAmount = amount.replace(/\./g, '').replace(',', '.');
+      const normalizedAmount = parseCurrencyToNumber(amount);
       const payload: any = {
         description,
-        amount: parseFloat(cleanAmount),
+        amount: normalizedAmount,
         date,
         type,
         accountId,
@@ -249,10 +250,10 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
                     <span className="absolute left-5 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
                     <input
                       type="text"
-                      inputMode="decimal"
+                      inputMode="numeric"
                       required
                       value={amount}
-                      onChange={e => setAmount(e.target.value.replace(/[^0-9,.]/g, '').replace('.', ','))}
+                      onChange={e => setAmount(maskCurrency(e.target.value))}
                       className="w-full bg-app-soft/30 border-2 border-transparent focus:border-app-accent/30 rounded-2xl pl-12 pr-5 py-4 text-app-text text-xl font-black outline-none transition-all tabular-nums"
                     />
                   </div>

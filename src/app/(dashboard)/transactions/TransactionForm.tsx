@@ -5,6 +5,7 @@ import { Transaction, TransactionType } from '@/domain/entities/Transaction';
 import { Category } from '@/domain/entities/Category';
 import { Account } from '@/domain/entities/Account';
 import { X, Calendar, Tag, Wallet, FileText, ChevronRight } from 'lucide-react';
+import { maskCurrency, parseCurrencyToNumber, formatCurrency } from '@/infrastructure/utils/currencyUtils';
 
 interface TransactionFormProps {
     initialData?: Partial<Transaction>;
@@ -24,7 +25,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     isLoading 
 }) => {
     const [type, setType] = useState<TransactionType>(initialData?.type || 'Expense');
-    const [amount, setAmount] = useState(initialData?.amount?.toString() || '');
+    const [amount, setAmount] = useState(initialData?.amount ? formatCurrency(initialData.amount) : '');
     const [description, setDescription] = useState(initialData?.description || '');
     const [date, setDate] = useState(initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
     const [categoryId, setCategoryId] = useState(initialData?.categoryId || '');
@@ -34,7 +35,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         e.preventDefault();
         await onSubmit({
             type,
-            amount: parseFloat(amount),
+            amount: parseCurrencyToNumber(amount),
             description,
             date: new Date(date),
             categoryId,
@@ -86,11 +87,10 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-medium">R$</span>
                         <input
-                            type="number"
-                            step="0.01"
+                            type="text"
                             required
                             value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            onChange={(e) => setAmount(maskCurrency(e.target.value))}
                             placeholder="0,00"
                             className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-zinc-950 dark:focus:ring-zinc-50 outline-none transition-all text-lg font-semibold"
                         />
