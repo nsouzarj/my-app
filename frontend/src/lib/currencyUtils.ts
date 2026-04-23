@@ -26,11 +26,16 @@ export const formatCurrency = (value: number): string => {
  * Transforma uma string de entrada em um valor monetário formatado (máscara de digitação).
  * Ex: "9999" -> "99,99"
  */
-export const maskCurrency = (value: string): string => {
-    // Remove tudo que não é dígito
-    const cleanValue = value.replace(/\D/g, '');
+export const maskCurrency = (value: string | number): string => {
+    if (value === undefined || value === null) return '0,00';
     
-    // Se estiver vazio, retorna vazio ou 0,00 dependendo da preferência.
+    // Converte para string se for número
+    const stringValue = typeof value === 'number' ? value.toFixed(2).replace('.', '') : value;
+    
+    // Remove tudo que não é dígito
+    const cleanValue = stringValue.replace(/\D/g, '');
+    
+    // Converte para número e divide por 100 para ter as decimais
     const numberValue = parseInt(cleanValue || '0', 10) / 100;
     
     return formatCurrency(numberValue);

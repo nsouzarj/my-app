@@ -6,8 +6,9 @@ import { X, AlertCircle } from 'lucide-react';
 import { toast } from '../ui/Toast';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { DateInput } from '../ui/DateInput';
+import { CurrencyInput } from '../ui/CurrencyInput';
 import { cn } from '../../lib/utils';
-import { maskCurrency, parseCurrencyToNumber, formatCurrency } from '../../lib/currencyUtils';
+import { parseCurrencyToNumber, formatCurrency } from '../../lib/currencyUtils';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -244,20 +245,16 @@ export function TransactionModal({ isOpen, onClose, onSuccess, transaction }: Tr
 
               {/* Amount & Date Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-app-text-dim uppercase tracking-widest ml-1">Quanto?</label>
-                  <div className="relative group">
-                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      required
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-app-text-dim uppercase tracking-widest ml-1">Valor do Lançamento</label>
+                    <CurrencyInput
                       value={amount}
-                      onChange={e => setAmount(maskCurrency(e.target.value))}
-                      className="w-full bg-app-soft/30 border-2 border-transparent focus:border-app-accent/30 rounded-2xl pl-12 pr-5 py-4 text-app-text text-xl font-black outline-none transition-all tabular-nums"
+                      onChange={setAmount}
+                      placeholder="0,00"
+                      required
+                      icon={<span className="text-sm font-black">R$</span>}
                     />
                   </div>
-                </div>
                 <div className="space-y-2">
                   <DateInput
                     label="Quando?"

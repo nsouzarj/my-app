@@ -10,7 +10,8 @@ import { startOfMonth, endOfMonth, format } from 'date-fns'
 import { DateFilter } from '../components/ui/DateFilter'
 import { formatDate, cn } from '../lib/utils'
 import { DateInput } from '../components/ui/DateInput'
-import { maskCurrency, parseCurrencyToNumber, formatCurrency } from '../lib/currencyUtils'
+import { parseCurrencyToNumber, formatCurrency } from '../lib/currencyUtils'
+import { CurrencyInput } from '../components/ui/CurrencyInput'
 
 interface Account {
   id: string
@@ -615,16 +616,13 @@ export default function Accounts() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-app-text-dim">Quanto você recebeu?</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
-                  <input 
-                    type="text"
-                    inputMode="numeric"
+                  <CurrencyInput 
+                    value={incomeAmount}
+                    onChange={setIncomeAmount}
+                    placeholder="0,00"
                     required
                     autoFocus
-                    value={incomeAmount}
-                    onChange={e => setIncomeAmount(maskCurrency(e.target.value))}
-                    placeholder="0,00"
-                    className="w-full bg-app-bg border border-app rounded-xl pl-12 pr-4 py-4 text-app-text text-2xl font-black focus:ring-2 focus:ring-app-accent outline-none shadow-inner tabular-nums"
+                    icon={<span className="text-xs font-black">R$</span>}
                   />
                 </div>
               </div>
@@ -732,15 +730,12 @@ export default function Accounts() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-app-text-dim">Valor a Transferir</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
-                  <input 
-                    type="text"
-                    inputMode="numeric"
-                    required
+                  <CurrencyInput 
                     value={transferAmount}
-                    onChange={e => setTransferAmount(maskCurrency(e.target.value))}
+                    onChange={setTransferAmount}
                     placeholder="0,00"
-                    className="w-full bg-app-bg border border-app rounded-xl pl-12 pr-4 py-4 text-app-text text-xl font-black focus:ring-2 focus:ring-app-accent outline-none shadow-inner font-mono tabular-nums"
+                    required
+                    icon={<span className="text-xs font-black">R$</span>}
                   />
                 </div>
               </div>
@@ -832,15 +827,13 @@ export default function Accounts() {
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-app-text-dim">Limite</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-app-text-dim font-bold text-xs">R$</span>
-                      <input 
-                        type="text"
-                        inputMode="numeric"
-                        value={creditLimit}
-                        onChange={e => setCreditLimit(maskCurrency(e.target.value))}
-                        placeholder="0,00"
-                        className="w-full bg-app-bg border border-app rounded-xl pl-8 pr-3 py-2 text-sm text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono tabular-nums"
-                      />
+                      <CurrencyInput 
+                          value={creditLimit}
+                          onChange={setCreditLimit}
+                          placeholder="0,00"
+                          icon={<span className="text-[10px] font-black">R$</span>}
+                          className="py-2 text-sm"
+                        />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -871,14 +864,12 @@ export default function Accounts() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-app-text-dim">Saldo Inicial (Manual)</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-dim font-bold">R$</span>
-                  <input 
-                    type="text"
-                    inputMode="numeric"
-                    required
+                  <CurrencyInput 
                     value={balance}
-                    onChange={e => setBalance(maskCurrency(e.target.value))}
-                    className="w-full bg-app-bg border border-app rounded-xl pl-10 pr-4 py-3 text-app-text focus:ring-2 focus:ring-app-accent outline-none font-mono tabular-nums"
+                    onChange={setBalance}
+                    placeholder="0,00"
+                    required
+                    icon={<span className="text-xs font-black">R$</span>}
                   />
                 </div>
               </div>
