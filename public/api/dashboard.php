@@ -3,6 +3,7 @@
 require_once 'db.php';
 
 $organizationId = $_GET['organizationId'] ?? 'default_org';
+
 $startDateInput = $_GET['startDate'] ?? null;
 $endDateInput = $_GET['endDate'] ?? null;
 

@@ -38,10 +38,25 @@ try {
 
     unset($user['password']); // Safety
 
+    // 3. Gerar JWT Token
+    require_once __DIR__ . '/jwt_helper.php';
+    
+    // Payload (o que fica visível, mas protegido de adulteração)
+    $payload = [
+        'userId' => $user['id'],
+        'organizationId' => $org ? $org['organizationId'] : 'default_org',
+        'iat' => time(), // Issued at
+        'exp' => time() + (86400 * 7) // Expirar em 7 dias (em segundos)
+    ];
+    
+    // A secret vem do db.php
+    $token = jwt_encode($payload, AUTH_PEPPER);
+
     echo json_encode([
         'success' => true, 
         'user' => $user, 
-        'organization' => $org
+        'organization' => $org,
+        'token' => $token // Retorna o token para o Frontend armazenar
     ]);
 } catch (Exception $e) {
     echo json_encode(['error' => $e->getMessage()]);

@@ -1,8 +1,17 @@
 <?php
 // public/api/db.php
-header("Access-Control-Allow-Origin: *");
+$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '*';
+
+if ($origin !== '*') {
+    header("Access-Control-Allow-Origin: $origin");
+} else {
+    // If there is no origin (e.g. server-to-server or direct access)
+    header("Access-Control-Allow-Origin: *");
+}
+
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json");
 
 // Handle OPTIONS request for CORS preflight
@@ -10,10 +19,26 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
     exit;
 }
 
-$host = 'host4527.hospedameusite.net';
-$db   = 'nsouzaet_finandb';
-$user = 'nsouzaet_root';
-$pass = '#Nso196840';
+$envPath = __DIR__ . '/../../.env';
+$envVars = [];
+if (file_exists($envPath)) {
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim($value, " \t\n\r\0\x0B\"'"); // remove quotes
+            $envVars[$name] = $value;
+        }
+    }
+}
+
+$host = $envVars['DB_HOST'] ?? 'localhost';
+$db   = $envVars['DB_NAME'] ?? '';
+$user = $envVars['DB_USER'] ?? '';
+$pass = $envVars['DB_PASS'] ?? '';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
